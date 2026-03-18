@@ -1,16 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import GatePage from "@/components/GatePage";
+import Gallery from "@/components/Gallery";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const [guest, setGuest] = useState<{ name: string; email: string } | null>(null);
+
+  const handleEnter = (name: string, email: string) => {
+    setGuest({ name, email });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <AnimatePresence mode="wait">
+      {!guest ? (
+        <motion.div
+          key="gate"
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.5 }}
+        >
+          <GatePage onEnter={handleEnter} />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="gallery"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          <Gallery userName={guest.name} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
