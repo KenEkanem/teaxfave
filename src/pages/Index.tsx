@@ -27,6 +27,11 @@ const Index = () => {
     setGuest(nextGuest);
   };
 
+  const handleLogout = () => {
+    window.localStorage.removeItem(GUEST_STORAGE_KEY);
+    setGuest(null);
+  };
+
   return (
     <AnimatePresence mode="wait">
       {!guest ? (
@@ -44,7 +49,7 @@ const Index = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <Gallery user={guest} />
+          <Gallery user={guest} onLogout={handleLogout} />
         </motion.div>
       )}
     </AnimatePresence>

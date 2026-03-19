@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import coupleImg from "@/assets/couple-3.jpeg";
-import { hasAppsScriptBackend, registerGuest } from "@/lib/apps-script";
+import { hasAppsScriptBackend, registerGuest, restoreGuestByEmail } from "@/lib/apps-script";
 
 interface GatePageProps {
   onEnter: (name: string, email: string) => void;
@@ -17,8 +17,8 @@ const GatePage = ({ onEnter }: GatePageProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      setError("Please fill in both fields");
+    if (!email.trim()) {
+      setError("Please enter your email");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -32,9 +32,17 @@ const GatePage = ({ onEnter }: GatePageProps) => {
     setIsSubmitting(true);
 
     try {
-      await registerGuest({ name: trimmedName, email: trimmedEmail });
-      toast(hasAppsScriptBackend() ? "Registration saved" : "Registration saved locally");
-      onEnter(trimmedName, trimmedEmail);
+      if (trimmedName) {
+        const guest = await registerGuest({ name: trimmedName, email: trimmedEmail });
+        toast(hasAppsScriptBackend() ? "Registration saved" : "Registration saved locally");
+        onEnter(guest.name, guest.email);
+      } else if (hasAppsScriptBackend()) {
+        const guest = await restoreGuestByEmail(trimmedEmail);
+        toast("Session restored");
+        onEnter(guest.name, guest.email);
+      } else {
+        setError("Enter your name to create a local session");
+      }
     } catch (submitError) {
       const message =
         submitError instanceof Error ? submitError.message : "Unable to register right now.";
@@ -104,7 +112,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
           >
             <input
               type="text"
-              placeholder="Your Name"
+              placeholder="Your Name (optional if returning)"
               value={name}
               onChange={(e) => { setName(e.target.value); setError(""); }}
               className="w-full px-4 py-3 rounded-xl bg-background/50 border border-border font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
@@ -141,7 +149,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             transition={{ delay: 1.2, duration: 0.8 }}
             className="text-muted-foreground text-xs font-body mt-5"
           >
-            City Church Calabar · 98 Marian Road
+            Returning guests can enter just their email to restore their session
           </motion.p>
         </div>
       </motion.div>

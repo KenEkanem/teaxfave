@@ -26,14 +26,29 @@ export function hasAppsScriptBackend() {
 
 export async function registerGuest(guest: Guest) {
   if (!APPS_SCRIPT_URL) {
-    return;
+    return guest;
   }
 
-  await postToAppsScript({
+  const response = await postToAppsScript<Guest>({
     action: "registerGuest",
     name: guest.name,
     email: guest.email,
   });
+
+  return response.data ?? guest;
+}
+
+export async function restoreGuestByEmail(email: string) {
+  if (!APPS_SCRIPT_URL) {
+    throw new Error("Returning guest lookup needs Apps Script enabled.");
+  }
+
+  const response = await postToAppsScript<Guest>({
+    action: "findGuestByEmail",
+    email,
+  });
+
+  return response.data;
 }
 
 export async function uploadGuestPhotos(args: {

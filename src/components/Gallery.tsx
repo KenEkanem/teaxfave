@@ -28,6 +28,7 @@ import couple5 from "@/assets/couple-5.jpeg";
 
 interface GalleryProps {
   user: Guest;
+  onLogout: () => void;
 }
 
 const EVENT_SECTIONS = [
@@ -65,7 +66,7 @@ const INITIAL_PHOTOS: Photo[] = [];
 const UPLOAD_SECTIONS = EVENT_SECTIONS.filter((section): section is Exclude<GallerySection, "All"> => section !== "All");
 const HERO_IMAGES = [couple1, couple2, couple3, couple4, couple5];
 
-const Gallery = ({ user }: GalleryProps) => {
+const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [photos, setPhotos] = useState<Photo[]>(() => {
     if (typeof window === "undefined") {
       return INITIAL_PHOTOS;
@@ -289,6 +290,15 @@ const Gallery = ({ user }: GalleryProps) => {
             <span className="text-sm text-muted-foreground font-body hidden sm:block">
               Welcome, {user.name}
             </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onLogout}
+              className="rounded-full text-muted-foreground hover:text-foreground"
+            >
+              Logout
+            </Button>
             <Button
               type="button"
               variant="outline"
