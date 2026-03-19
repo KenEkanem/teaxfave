@@ -1,9 +1,10 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Images } from "lucide-react";
+import { LoaderCircle, Upload, Images } from "lucide-react";
 import PhotoCard from "./PhotoCard";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Progress } from "./ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,12 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { toast } from "./ui/sonner";
+import {
+  deleteGuestPhoto,
+  hasAppsScriptBackend,
+  uploadGuestPhotos,
+  type Guest,
+} from "@/lib/apps-script";
 import couple1 from "@/assets/couple-1.jpeg";
 import couple2 from "@/assets/couple-2.jpeg";
 import couple3 from "@/assets/couple-3.jpeg";
@@ -20,11 +27,14 @@ import couple4 from "@/assets/couple-4.jpeg";
 import couple5 from "@/assets/couple-5.jpeg";
 
 interface GalleryProps {
-  userName: string;
+  user: Guest;
 }
 
 const EVENT_SECTIONS = [
   "All",
+  "Ceremony",
+  "Couple Moments",
+  "Family & Friends",
   "The Vows",
   "First Dance",
   "The Party",
@@ -39,62 +49,107 @@ interface Photo {
   src: string;
   contributor: string;
   section: Exclude<GallerySection, "All">;
+  ownerEmail?: string;
   uploaded?: boolean;
 }
 
-const INITIAL_PHOTOS: Photo[] = [
-  { id: "1", src: couple1, contributor: "Steve David", section: "Getting Ready" },
-  { id: "2", src: couple2, contributor: "Steve David", section: "The Vows" },
-  { id: "3", src: couple3, contributor: "Miracle", section: "The Party" },
-  { id: "4", src: couple4, contributor: "Promise", section: "First Dance" },
-  { id: "5", src: couple5, contributor: "Steve David", section: "Reception" },
-  { id: "6", src: couple1, contributor: "Miracle", section: "The Party" },
-  { id: "7", src: couple3, contributor: "Promise", section: "Getting Ready" },
-  { id: "8", src: couple4, contributor: "Steve David", section: "The Vows" },
-  { id: "9", src: couple5, contributor: "Miracle", section: "Reception" },
-  { id: "10", src: couple2, contributor: "Promise", section: "First Dance" },
-];
+interface ContributorGroup {
+  contributor: string;
+  photos: Photo[];
+}
+
+const UPLOADED_PHOTOS_STORAGE_KEY = "tee-fave-uploaded-photos";
+
+const INITIAL_PHOTOS: Photo[] = [];
 
 const UPLOAD_SECTIONS = EVENT_SECTIONS.filter((section): section is Exclude<GallerySection, "All"> => section !== "All");
+const HERO_IMAGES = [couple1, couple2, couple3, couple4, couple5];
 
-const Gallery = ({ userName }: GalleryProps) => {
-  const [photos, setPhotos] = useState(INITIAL_PHOTOS);
+const Gallery = ({ user }: GalleryProps) => {
+  const [photos, setPhotos] = useState<Photo[]>(() => {
+    if (typeof window === "undefined") {
+      return INITIAL_PHOTOS;
+    }
+
+    try {
+      const storedPhotos = window.localStorage.getItem(UPLOADED_PHOTOS_STORAGE_KEY);
+      if (!storedPhotos) {
+        return INITIAL_PHOTOS;
+      }
+
+      const parsedPhotos = JSON.parse(storedPhotos) as Photo[];
+      return [...parsedPhotos, ...INITIAL_PHOTOS];
+    } catch {
+      return INITIAL_PHOTOS;
+    }
+  });
   const [activeSection, setActiveSection] = useState<string>("All");
-  const [activeContributor, setActiveContributor] = useState<string>("All");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadSection, setUploadSection] = useState<Exclude<GallerySection, "All">>("Reception");
   const [coverIndex, setCoverIndex] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const uploadedUrlsRef = useRef<string[]>([]);
-
-  const contributors = useMemo(
-    () => ["All", ...Array.from(new Set(photos.map((p) => p.contributor)))],
-    [photos]
-  );
 
   const filtered = useMemo(() => {
     return photos.filter((p) => {
-      const matchSection = activeSection === "All" || p.section === activeSection;
-      const matchContributor = activeContributor === "All" || p.contributor === activeContributor;
-      return matchSection && matchContributor;
+      return activeSection === "All" || p.section === activeSection;
     });
-  }, [activeSection, activeContributor, photos]);
+  }, [activeSection, photos]);
+
+  const contributorGroups = useMemo<ContributorGroup[]>(() => {
+    if (activeSection !== "All") {
+      return [];
+    }
+
+    const groups = filtered.reduce<Record<string, Photo[]>>((acc, photo) => {
+      if (!acc[photo.contributor]) {
+        acc[photo.contributor] = [];
+      }
+      acc[photo.contributor].push(photo);
+      return acc;
+    }, {});
+
+    return Object.entries(groups)
+      .map(([contributor, contributorPhotos]) => ({
+        contributor,
+        photos: contributorPhotos.sort((a, b) => a.section.localeCompare(b.section)),
+      }))
+      .sort((a, b) => {
+        if (b.photos.length !== a.photos.length) {
+          return b.photos.length - a.photos.length;
+        }
+        return a.contributor.localeCompare(b.contributor);
+      });
+  }, [activeSection, filtered]);
+
+  const totalContributors = useMemo(
+    () => new Set(photos.map((photo) => photo.contributor)).size,
+    [photos],
+  );
+
+  const totalMoments = useMemo(
+    () => new Set(photos.map((photo) => photo.section)).size,
+    [photos],
+  );
 
   useEffect(() => {
     setCoverIndex(0);
-  }, [activeSection, activeContributor, photos.length]);
+  }, []);
 
   useEffect(() => {
-    if (filtered.length <= 1) {
+    if (HERO_IMAGES.length <= 1) {
       return;
     }
 
     const interval = window.setInterval(() => {
-      setCoverIndex((current) => (current + 1) % filtered.length);
-    }, 4500);
+      setCoverIndex((current) => (current + 1) % HERO_IMAGES.length);
+    }, 4000);
 
     return () => window.clearInterval(interval);
-  }, [filtered]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -102,13 +157,15 @@ const Gallery = ({ userName }: GalleryProps) => {
     };
   }, []);
 
-  const coverPhoto = filtered[coverIndex] ?? photos[0];
-
+  useEffect(() => {
+    const uploadedPhotos = photos.filter((photo) => photo.uploaded);
+    window.localStorage.setItem(UPLOADED_PHOTOS_STORAGE_KEY, JSON.stringify(uploadedPhotos));
+  }, [photos]);
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(Array.from(event.target.files ?? []));
   };
 
-  const handleUpload = (event: FormEvent<HTMLFormElement>) => {
+  const handleUpload = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (selectedFiles.length === 0) {
@@ -116,21 +173,100 @@ const Gallery = ({ userName }: GalleryProps) => {
       return;
     }
 
-    const nextPhotos = selectedFiles.map((file, index) => ({
-      id: `${file.name}-${file.lastModified}-${index}`,
-      src: URL.createObjectURL(file),
-      contributor: userName,
-      section: uploadSection,
-      uploaded: true,
-    }));
+    setIsUploading(true);
+    setUploadProgress(12);
 
-    uploadedUrlsRef.current.push(...nextPhotos.map((photo) => photo.src));
-    setPhotos((current) => [...nextPhotos, ...current]);
-    setSelectedFiles([]);
-    setActiveSection("All");
-    setActiveContributor("All");
-    setIsUploadOpen(false);
-    toast(`${nextPhotos.length} photo${nextPhotos.length > 1 ? "s" : ""} added to the gallery`);
+    try {
+      setUploadProgress(28);
+      const uploadedPhotos = await uploadGuestPhotos({
+        guest: user,
+        section: uploadSection,
+        files: selectedFiles,
+      });
+      setUploadProgress(76);
+
+      const nextPhotos =
+        uploadedPhotos && uploadedPhotos.length > 0
+          ? uploadedPhotos
+          : selectedFiles.map((file, index) => ({
+              id: `${file.name}-${file.lastModified}-${index}`,
+              src: URL.createObjectURL(file),
+              contributor: user.name,
+              section: uploadSection,
+              ownerEmail: user.email,
+              uploaded: true as const,
+            }));
+
+      if (!uploadedPhotos || uploadedPhotos.length === 0) {
+        uploadedUrlsRef.current.push(...nextPhotos.map((photo) => photo.src));
+      }
+
+      setPhotos((current) => [...nextPhotos, ...current]);
+      setSelectedFiles([]);
+      setActiveSection("All");
+      setUploadProgress(100);
+      setIsUploadOpen(false);
+      toast(
+        hasAppsScriptBackend()
+          ? `${nextPhotos.length} photo${nextPhotos.length > 1 ? "s" : ""} uploaded to Drive`
+          : `${nextPhotos.length} photo${nextPhotos.length > 1 ? "s" : ""} added locally`,
+      );
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error ? uploadError.message : "Unable to upload photos.";
+      toast(message);
+    } finally {
+      window.setTimeout(() => setUploadProgress(0), 250);
+      setIsUploading(false);
+    }
+  };
+
+  const canDeletePhoto = (photo: Photo) => {
+    if (!photo.uploaded) {
+      return false;
+    }
+
+    return photo.ownerEmail === user.email || (!photo.ownerEmail && photo.contributor === user.name);
+  };
+
+  const handleDeletePhoto = async (photo: Photo) => {
+    if (!canDeletePhoto(photo)) {
+      toast("You can only delete your own uploads");
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this uploaded photo?");
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPhotoId(photo.id);
+
+    try {
+      if (hasAppsScriptBackend()) {
+        await deleteGuestPhoto({
+          guest: user,
+          photoId: photo.id,
+        });
+      }
+
+      if (photo.src.startsWith("blob:")) {
+        URL.revokeObjectURL(photo.src);
+        uploadedUrlsRef.current = uploadedUrlsRef.current.filter((url) => url !== photo.src);
+      }
+
+      setPhotos((current) => current.filter((item) => item.id !== photo.id));
+      toast("Photo deleted");
+    } catch (deleteError) {
+      const rawMessage =
+        deleteError instanceof Error ? deleteError.message : "Unable to delete photo.";
+      const message = rawMessage.includes("Unsupported action")
+        ? "Delete is not enabled in Apps Script yet. Add the deletePhoto action to your backend."
+        : rawMessage;
+      toast(message);
+    } finally {
+      setDeletingPhotoId(null);
+    }
   };
 
   return (
@@ -151,7 +287,7 @@ const Gallery = ({ userName }: GalleryProps) => {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground font-body hidden sm:block">
-              Welcome, {userName}
+              Welcome, {user.name}
             </span>
             <Button
               type="button"
@@ -165,7 +301,7 @@ const Gallery = ({ userName }: GalleryProps) => {
             </Button>
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
               <span className="text-primary font-body font-semibold text-sm">
-                {userName.charAt(0).toUpperCase()}
+                {user.name.charAt(0).toUpperCase()}
               </span>
             </div>
           </div>
@@ -175,38 +311,40 @@ const Gallery = ({ userName }: GalleryProps) => {
       {/* Hero Banner */}
       <div className="container mx-auto max-w-6xl px-4 pb-4 pt-8">
         <motion.div
-          key={coverPhoto?.id}
+          key={coverIndex}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
           className="relative overflow-hidden rounded-[2rem] border border-white/40"
         >
           <img
-            src={coverPhoto?.src}
-            alt="Gallery cover"
+            src={HERO_IMAGES[coverIndex]}
+            alt="Tee and Fave pre-wedding moments"
             className="h-[320px] w-full object-cover md:h-[420px]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/40 to-foreground/20" />
           <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-6 text-left text-white md:p-10">
             <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.28em] text-white/75">
               <Images className="h-4 w-4" />
-              Dynamic cover
+              Wedding memories
             </div>
             <h2 className="max-w-2xl font-display text-3xl font-bold md:text-5xl">
               Our Wedding Gallery
             </h2>
             <p className="mt-3 max-w-xl font-body text-sm text-white/80 md:text-base">
-              The cover now rotates through the photos in your current view, including anything uploaded from a phone or laptop.
+              {photos.length > 0
+                ? "A growing collection of the moments, people, and joy shared throughout Tee and Fave's celebration."
+                : "Your gallery is ready. Share the first real moments from the celebration and they will appear here."}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <div className="rounded-full bg-white/14 px-4 py-2 text-xs font-body text-white backdrop-blur-md">
-                {filtered.length} visible memories
+                {photos.length} total photos
               </div>
               <div className="rounded-full bg-white/14 px-4 py-2 text-xs font-body text-white backdrop-blur-md">
-                Current: {coverPhoto?.section}
+                {totalContributors} total contributors
               </div>
               <div className="rounded-full bg-white/14 px-4 py-2 text-xs font-body text-white backdrop-blur-md">
-                By {coverPhoto?.contributor}
+                {totalMoments} total moments
               </div>
             </div>
           </div>
@@ -230,50 +368,72 @@ const Gallery = ({ userName }: GalleryProps) => {
             </button>
           ))}
         </div>
-
-        {/* Contributor Filter */}
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
-          <span className="text-xs text-muted-foreground font-body self-center mr-1 whitespace-nowrap">
-            By:
-          </span>
-          {contributors.map((c) => (
-            <button
-              key={c}
-              onClick={() => setActiveContributor(c)}
-              className={`px-3 py-1.5 rounded-full font-body text-xs transition-all duration-300 ${
-                activeContributor === c
-                  ? "bg-secondary text-secondary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Masonry Gallery */}
+      {/* Gallery */}
       <div className="container mx-auto max-w-6xl px-4 pb-12">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${activeSection}-${activeContributor}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-          >
-            {filtered.map((photo, i) => (
-              <PhotoCard
-                key={photo.id}
-                src={photo.src}
-                contributor={photo.contributor}
-                section={photo.section}
-                index={i}
-              />
+        {activeSection === "All" ? (
+          <div className="space-y-8">
+            {contributorGroups.map((group, groupIndex) => (
+              <motion.section
+                key={group.contributor}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: groupIndex * 0.05 }}
+                className="glass-card rounded-[1.5rem] p-4 md:p-5"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <h3 className="font-display text-xl font-semibold text-foreground">
+                    {group.contributor}
+                  </h3>
+                  <div className="h-px flex-1 bg-border/70" />
+                  <p className="text-xs text-muted-foreground">
+                    {group.photos.length} upload{group.photos.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {group.photos.map((photo, index) => (
+                    <PhotoCard
+                      key={photo.id}
+                      src={photo.src}
+                      contributor={photo.contributor}
+                      section={photo.section}
+                      index={index}
+                      canDelete={canDeletePhoto(photo)}
+                      isDeleting={deletingPhotoId === photo.id}
+                      onDelete={() => handleDeletePhoto(photo)}
+                    />
+                  ))}
+                </div>
+              </motion.section>
             ))}
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSection}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+            >
+              {filtered.map((photo, i) => (
+                <PhotoCard
+                  key={photo.id}
+                  src={photo.src}
+                  contributor={photo.contributor}
+                  section={photo.section}
+                  index={i}
+                  canDelete={canDeletePhoto(photo)}
+                  isDeleting={deletingPhotoId === photo.id}
+                  onDelete={() => handleDeletePhoto(photo)}
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
 
         {filtered.length === 0 && (
           <div className="text-center py-20">
@@ -305,7 +465,7 @@ const Gallery = ({ userName }: GalleryProps) => {
             <DialogHeader className="space-y-2 text-left">
               <DialogTitle className="font-display text-2xl">Upload memories</DialogTitle>
               <DialogDescription>
-                Pick images from your phone or laptop and add them straight into the gallery view.
+                Pick images from your phone or laptop and upload them into your Drive folder.
               </DialogDescription>
             </DialogHeader>
 
@@ -326,6 +486,15 @@ const Gallery = ({ userName }: GalleryProps) => {
                   ? `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`
                   : "You can select one or more images."}
               </p>
+              {isUploading && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>Sharing moment...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-1.5 bg-muted" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -349,15 +518,28 @@ const Gallery = ({ userName }: GalleryProps) => {
             </div>
 
             <div className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
-              Uploading as <span className="font-semibold text-foreground">{userName}</span>
+              Uploading as <span className="font-semibold text-foreground">{user.name}</span>{" "}
+              <span className="text-xs">({user.email})</span>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {hasAppsScriptBackend()
+                ? "Files will be sent to Google Drive through Apps Script."
+                : "Apps Script URL not set. Uploads will stay in this browser only."}
+            </p>
 
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsUploadOpen(false)}>
+              <Button type="button" variant="ghost" onClick={() => setIsUploadOpen(false)} disabled={isUploading}>
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-full">
-                Add to gallery
+              <Button type="submit" className="rounded-full" disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Add to gallery"
+                )}
               </Button>
             </DialogFooter>
           </form>

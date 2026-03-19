@@ -1,13 +1,25 @@
 import { motion } from "framer-motion";
+import { Trash2 } from "lucide-react";
 
 interface PhotoCardProps {
   src: string;
   contributor: string;
   section: string;
   index: number;
+  canDelete?: boolean;
+  isDeleting?: boolean;
+  onDelete?: () => void;
 }
 
-const PhotoCard = ({ src, contributor, section, index }: PhotoCardProps) => {
+const PhotoCard = ({
+  src,
+  contributor,
+  section,
+  index,
+  canDelete = false,
+  isDeleting = false,
+  onDelete,
+}: PhotoCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -18,6 +30,17 @@ const PhotoCard = ({ src, contributor, section, index }: PhotoCardProps) => {
     >
       <div className="glass-card overflow-hidden rounded-2xl">
         <div className="relative overflow-hidden">
+          {canDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="absolute right-2.5 top-2.5 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-destructive shadow-md transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Delete uploaded photo"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
           <img
             src={src}
             alt={`Photo by ${contributor}`}
