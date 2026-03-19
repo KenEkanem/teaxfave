@@ -329,15 +329,15 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         transition={{ duration: 0.6 }}
         className="sticky top-0 z-50 glass-card-strong border-b border-border/50"
       >
-        <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-xl md:text-2xl font-bold">
+        <div className="container mx-auto flex max-w-6xl items-start justify-between gap-3 px-4 py-3 sm:items-center sm:gap-4 sm:py-4">
+          <div className="min-w-0">
+            <h1 className="font-display text-lg font-bold sm:text-xl md:text-2xl">
               Fave <span className="text-gold-gradient">x</span> Tea
             </h1>
             <p className="text-xs text-muted-foreground font-body">March 20, 2026</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground font-body hidden sm:block">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <span className="hidden text-sm font-body text-muted-foreground md:block">
               Welcome, {user.name}
             </span>
             <Button
@@ -345,7 +345,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               variant="ghost"
               size="sm"
               onClick={onLogout}
-              className="rounded-full text-muted-foreground hover:text-foreground"
+              className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground"
             >
               Logout
             </Button>
@@ -354,12 +354,12 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               variant="outline"
               size="sm"
               onClick={() => setIsUploadOpen(true)}
-              className="hidden rounded-full border-border/70 bg-background/70 sm:inline-flex"
+              className="hidden h-9 rounded-full border-border/70 bg-background/70 sm:inline-flex"
             >
               <Upload className="h-4 w-4" />
               Upload
             </Button>
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 sm:h-9 sm:w-9">
               <span className="text-primary font-body font-semibold text-sm">
                 {user.name.charAt(0).toUpperCase()}
               </span>
@@ -369,41 +369,41 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       </motion.header>
 
       {/* Hero Banner */}
-      <div className="container mx-auto max-w-6xl px-4 pb-4 pt-8">
+      <div className="container mx-auto max-w-6xl px-4 pb-4 pt-4 sm:pt-6 md:pt-8">
         <motion.div
           key={coverIndex}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
-          className="relative overflow-hidden rounded-[2rem] border border-white/40"
+          className="relative overflow-hidden rounded-[1.5rem] border border-white/40 sm:rounded-[2rem]"
         >
           <img
             src={HERO_IMAGES[coverIndex]}
             alt="Fave x Tea pre-wedding moments"
-            className="h-[320px] w-full object-cover md:h-[420px]"
+            className="h-[250px] w-full object-cover sm:h-[320px] md:h-[420px]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/40 to-foreground/20" />
-          <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-6 text-left text-white md:p-10">
-            <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.28em] text-white/75">
+          <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-4 text-left text-white sm:p-6 md:p-10">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/75 sm:mb-4 sm:text-xs sm:tracking-[0.28em]">
               <Images className="h-4 w-4" />
               Wedding memories
             </div>
-            <h2 className="max-w-2xl font-display text-3xl font-bold md:text-5xl">
+            <h2 className="max-w-2xl font-display text-2xl font-bold sm:text-3xl md:text-5xl">
               Our Wedding Gallery
             </h2>
-            <p className="mt-3 max-w-xl font-body text-sm text-white/80 md:text-base">
+            <p className="mt-2 max-w-xl font-body text-xs leading-relaxed text-white/80 sm:mt-3 sm:text-sm md:text-base">
               {photos.length > 0
                 ? "A growing collection of the moments, people, and joy shared throughout Fave x Tea's celebration."
                 : "Your gallery is ready. Share the first real moments from the celebration and they will appear here."}
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <div className="rounded-full bg-white/14 px-4 py-2 text-xs font-body text-white backdrop-blur-md">
+            <div className="mt-4 flex flex-wrap gap-2 sm:mt-6 sm:gap-3">
+              <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
                 {photos.length} total photos
               </div>
-              <div className="rounded-full bg-white/14 px-4 py-2 text-xs font-body text-white backdrop-blur-md">
+              <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
                 {totalContributors} total contributors
               </div>
-              <div className="rounded-full bg-white/14 px-4 py-2 text-xs font-body text-white backdrop-blur-md">
+              <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
                 {totalMoments} total moments
               </div>
             </div>
@@ -412,13 +412,13 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       </div>
 
       {/* Event Section Filters */}
-      <div className="container max-w-6xl mx-auto px-4 py-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="container mx-auto max-w-6xl px-4 py-3 sm:py-4">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           {EVENT_SECTIONS.map((section) => (
             <button
               key={section}
               onClick={() => setActiveSection(section)}
-              className={`px-4 py-2 rounded-full font-body text-xs font-medium whitespace-nowrap transition-all duration-300 ${
+              className={`shrink-0 rounded-full px-3 py-2 text-[11px] font-medium whitespace-nowrap transition-all duration-300 sm:px-4 sm:text-xs ${
                 activeSection === section
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                   : "glass-card text-muted-foreground hover:text-foreground"
@@ -431,7 +431,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       </div>
 
       {/* Gallery */}
-      <div className="container mx-auto max-w-6xl px-4 pb-12">
+      <div className="container mx-auto max-w-6xl px-4 pb-24 sm:pb-16">
         {isLoadingGallery && (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
             <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -447,19 +447,19 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: groupIndex * 0.05 }}
-                className="glass-card rounded-[1.5rem] p-4 md:p-5"
+                className="glass-card rounded-[1.25rem] p-3.5 sm:rounded-[1.5rem] sm:p-4 md:p-5"
               >
-                <div className="mb-4 flex items-center gap-3">
-                  <h3 className="font-display text-xl font-semibold text-foreground">
+                <div className="mb-3 flex items-center gap-2 sm:mb-4 sm:gap-3">
+                  <h3 className="font-display text-lg font-semibold text-foreground sm:text-xl">
                     {group.contributor}
                   </h3>
                   <div className="h-px flex-1 bg-border/70" />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground sm:text-xs">
                     {group.photos.length} upload{group.photos.length > 1 ? "s" : ""}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
                   {group.photos.map((photo, index) => (
                     <PhotoCard
                       key={photo.id}
@@ -484,7 +484,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+              className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4"
             >
               {filtered.map((photo, i) => (
                 <PhotoCard
@@ -516,24 +516,24 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-5 right-4 z-50 sm:bottom-6 sm:right-6"
       >
         <button
           type="button"
           onClick={() => setIsUploadOpen(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110 sm:h-14 sm:w-14"
           aria-label="Upload photos"
         >
-          <Upload className="h-6 w-6" />
+          <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
       </motion.div>
 
       <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-        <DialogContent className="overflow-hidden rounded-[1.75rem] border-white/40 bg-background/95 p-0 sm:max-w-xl">
-          <form onSubmit={handleUpload} className="space-y-6 p-6">
+        <DialogContent className="overflow-hidden rounded-[1.5rem] border-white/40 bg-background/95 p-0 sm:max-w-xl sm:rounded-[1.75rem]">
+          <form onSubmit={handleUpload} className="space-y-5 p-4 sm:space-y-6 sm:p-6">
             <DialogHeader className="space-y-2 text-left">
-              <DialogTitle className="font-display text-2xl">Upload memories</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-xl sm:text-2xl">Upload memories</DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed">
                 Pick images from your phone or laptop and upload them into your Drive folder.
               </DialogDescription>
             </DialogHeader>
@@ -548,7 +548,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
                 accept="image/*"
                 multiple
                 onChange={handleFileChange}
-                className="h-auto rounded-2xl border-dashed border-primary/35 bg-primary/5 py-4 file:mr-4 file:rounded-full file:bg-primary/10 file:px-4 file:py-2 file:text-primary"
+                className="h-auto rounded-2xl border-dashed border-primary/35 bg-primary/5 py-4 text-sm file:mr-3 file:rounded-full file:bg-primary/10 file:px-3 file:py-2 file:text-primary sm:file:mr-4 sm:file:px-4"
               />
               <p className="text-xs text-muted-foreground">
                 {selectedFiles.length > 0
@@ -574,7 +574,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
                     key={section}
                     type="button"
                     onClick={() => setUploadSection(section)}
-                    className={`rounded-full px-4 py-2 text-xs font-medium transition-all duration-300 ${
+                    className={`rounded-full px-3 py-2 text-[11px] font-medium transition-all duration-300 sm:px-4 sm:text-xs ${
                       uploadSection === section
                         ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                         : "glass-card text-muted-foreground hover:text-foreground"
@@ -596,11 +596,11 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
                 : "Apps Script URL not set. Uploads will stay in this browser only."}
             </p>
 
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsUploadOpen(false)} disabled={isUploading}>
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="ghost" onClick={() => setIsUploadOpen(false)} disabled={isUploading} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-full" disabled={isUploading}>
+              <Button type="submit" className="w-full rounded-full sm:w-auto" disabled={isUploading}>
                 {isUploading ? (
                   <>
                     <LoaderCircle className="h-4 w-4 animate-spin" />

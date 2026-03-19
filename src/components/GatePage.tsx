@@ -53,7 +53,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-10">
       {/* Background */}
       <div className="absolute inset-0">
         <img
@@ -69,27 +69,27 @@ const GatePage = ({ onEnter }: GatePageProps) => {
         initial={{ opacity: 0, y: 40, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-md mx-4"
+        className="relative z-10 w-full max-w-md"
       >
-        <div className="glass-card-strong rounded-2xl p-8 md:p-10 text-center">
+        <div className="glass-card-strong rounded-[1.5rem] p-5 text-center sm:p-7 md:rounded-[2rem] md:p-10">
           {/* Names */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
           >
-            <p className="text-muted-foreground font-body text-sm tracking-[0.3em] uppercase mb-3">
+            <p className="mb-2 text-xs font-body uppercase tracking-[0.24em] text-muted-foreground sm:mb-3 sm:text-sm sm:tracking-[0.3em]">
               Welcome to
             </p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground leading-tight">
+            <h1 className="font-display text-3xl font-bold leading-tight text-foreground sm:text-4xl md:text-5xl">
               Fave{" "}
               <span className="text-gold-gradient">x</span>{" "}
               Tea
             </h1>
-            <p className="mt-3 font-display text-lg italic text-muted-foreground">
+            <p className="mt-2 font-display text-base italic text-muted-foreground sm:mt-3 sm:text-lg">
               March 20th, 2026
             </p>
-            <div className="w-16 h-px bg-primary mx-auto mt-5 mb-6" />
+            <div className="mx-auto mb-5 mt-4 h-px w-14 bg-primary sm:mb-6 sm:mt-5 sm:w-16" />
           </motion.div>
 
           {/* Subtitle */}
@@ -97,7 +97,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="text-muted-foreground font-body text-sm mb-6"
+            className="mb-5 px-2 text-sm font-body text-muted-foreground sm:mb-6"
           >
             Share your moments from our special day
           </motion.p>
@@ -108,21 +108,21 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
             onSubmit={handleSubmit}
-            className="space-y-4"
+            className="space-y-3.5 sm:space-y-4"
           >
             <input
               type="text"
               placeholder="Your Name (optional if returning)"
               value={name}
               onChange={(e) => { setName(e.target.value); setError(""); }}
-              className="w-full px-4 py-3 rounded-xl bg-background/50 border border-border font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              className="w-full rounded-xl border border-border bg-background/60 px-4 py-3 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:py-3.5"
             />
             <input
               type="email"
               placeholder="Your Email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(""); }}
-              className="w-full px-4 py-3 rounded-xl bg-background/50 border border-border font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              className="w-full rounded-xl border border-border bg-background/60 px-4 py-3 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:py-3.5"
             />
             {error && (
               <p className="text-destructive text-xs font-body">{error}</p>
@@ -130,7 +130,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-body font-semibold text-sm tracking-wide hover:brightness-110 transition-all duration-300 shadow-lg shadow-primary/20"
+              className="w-full rounded-xl bg-primary py-3 text-sm font-semibold tracking-wide text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:brightness-110 sm:py-3.5"
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">
@@ -147,7 +147,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.8 }}
-            className="text-muted-foreground text-xs font-body mt-5"
+            className="mt-4 px-2 text-xs font-body leading-relaxed text-muted-foreground sm:mt-5"
           >
             Returning guests can enter just their email to restore their session
           </motion.p>
