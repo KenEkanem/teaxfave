@@ -95,6 +95,18 @@ export async function deleteGuestPhoto(args: {
   });
 }
 
+export async function listGalleryPhotos() {
+  if (!APPS_SCRIPT_URL) {
+    return null;
+  }
+
+  const response = await postToAppsScript<{ photos: UploadedPhoto[] }>({
+    action: "listPhotos",
+  });
+
+  return response.data?.photos ?? [];
+}
+
 async function postToAppsScript<T = unknown>(payload: Record<string, unknown>) {
   const response = await fetch(APPS_SCRIPT_URL!, {
     method: "POST",

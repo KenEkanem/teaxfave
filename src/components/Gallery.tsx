@@ -17,6 +17,7 @@ import { toast } from "./ui/sonner";
 import {
   deleteGuestPhoto,
   hasAppsScriptBackend,
+  listGalleryPhotos,
   uploadGuestPhotos,
   type Guest,
 } from "@/lib/apps-script";
@@ -72,6 +73,10 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       return INITIAL_PHOTOS;
     }
 
+    if (hasAppsScriptBackend()) {
+      return INITIAL_PHOTOS;
+    }
+
     try {
       const storedPhotos = window.localStorage.getItem(UPLOADED_PHOTOS_STORAGE_KEY);
       if (!storedPhotos) {
@@ -92,6 +97,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(hasAppsScriptBackend());
   const uploadedUrlsRef = useRef<string[]>([]);
 
   const filtered = useMemo(() => {
@@ -159,9 +165,53 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
   }, []);
 
   useEffect(() => {
+    if (hasAppsScriptBackend()) {
+      return;
+    }
+
     const uploadedPhotos = photos.filter((photo) => photo.uploaded);
     window.localStorage.setItem(UPLOADED_PHOTOS_STORAGE_KEY, JSON.stringify(uploadedPhotos));
   }, [photos]);
+
+  useEffect(() => {
+    if (!hasAppsScriptBackend()) {
+      setIsLoadingGallery(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPhotos = async () => {
+      setIsLoadingGallery(true);
+
+      try {
+        const remotePhotos = await listGalleryPhotos();
+
+        if (cancelled || !remotePhotos) {
+          return;
+        }
+
+        setPhotos(remotePhotos);
+      } catch (loadError) {
+        if (!cancelled) {
+          const message =
+            loadError instanceof Error ? loadError.message : "Unable to load gallery photos.";
+          toast(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingGallery(false);
+        }
+      }
+    };
+
+    void loadPhotos();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user.email]);
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(Array.from(event.target.files ?? []));
   };
@@ -382,6 +432,13 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
 
       {/* Gallery */}
       <div className="container mx-auto max-w-6xl px-4 pb-12">
+        {isLoadingGallery && (
+          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+            Loading shared gallery...
+          </div>
+        )}
+
         {activeSection === "All" ? (
           <div className="space-y-8">
             {contributorGroups.map((group, groupIndex) => (
@@ -447,7 +504,9 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
 
         {filtered.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-muted-foreground font-body">No photos in this category yet</p>
+            <p className="text-muted-foreground font-body">
+              {isLoadingGallery ? "Loading photos..." : "No photos in this category yet"}
+            </p>
           </div>
         )}
       </div>
