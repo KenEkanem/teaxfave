@@ -58,7 +58,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
       <div className="absolute inset-0">
         <img
           src={coupleImg}
-          alt="Tee and Fave"
+          alt="Fave x Tea"
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-foreground/60" />
@@ -79,12 +79,12 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             transition={{ delay: 0.3, duration: 0.8 }}
           >
             <p className="text-muted-foreground font-body text-sm tracking-[0.3em] uppercase mb-3">
-              The Wedding of
+              Welcome to
             </p>
             <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground leading-tight">
-              Favour{" "}
-              <span className="text-gold-gradient">&</span>{" "}
-              Thomas
+              Fave{" "}
+              <span className="text-gold-gradient">x</span>{" "}
+              Tea
             </h1>
             <p className="mt-3 font-display text-lg italic text-muted-foreground">
               March 20th, 2026

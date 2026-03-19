@@ -332,7 +332,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="font-display text-xl md:text-2xl font-bold">
-              Tee <span className="text-gold-gradient">&</span> Fave
+              Fave <span className="text-gold-gradient">x</span> Tea
             </h1>
             <p className="text-xs text-muted-foreground font-body">March 20, 2026</p>
           </div>
@@ -379,7 +379,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         >
           <img
             src={HERO_IMAGES[coverIndex]}
-            alt="Tee and Fave pre-wedding moments"
+            alt="Fave x Tea pre-wedding moments"
             className="h-[320px] w-full object-cover md:h-[420px]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/40 to-foreground/20" />
@@ -393,7 +393,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             </h2>
             <p className="mt-3 max-w-xl font-body text-sm text-white/80 md:text-base">
               {photos.length > 0
-                ? "A growing collection of the moments, people, and joy shared throughout Tee and Fave's celebration."
+                ? "A growing collection of the moments, people, and joy shared throughout Fave x Tea's celebration."
                 : "Your gallery is ready. Share the first real moments from the celebration and they will appear here."}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
