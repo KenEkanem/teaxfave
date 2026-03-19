@@ -329,14 +329,14 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         transition={{ duration: 0.6 }}
         className="sticky top-0 z-50 glass-card-strong border-b border-border/50"
       >
-        <div className="container mx-auto flex max-w-6xl items-start justify-between gap-3 px-4 py-3 sm:items-center sm:gap-4 sm:py-4">
+        <div className="container mx-auto flex max-w-6xl items-start justify-between gap-3 px-4 py-3 max-[430px]:gap-2 max-[430px]:px-3 sm:items-center sm:gap-4 sm:py-4">
           <div className="min-w-0">
-            <h1 className="font-display text-lg font-bold sm:text-xl md:text-2xl">
+            <h1 className="font-display text-lg font-bold max-[430px]:text-base sm:text-xl md:text-2xl">
               Fave <span className="text-gold-gradient">x</span> Tea
             </h1>
             <p className="text-xs text-muted-foreground font-body">March 20, 2026</p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 max-[430px]:gap-1.5 sm:gap-3">
             <span className="hidden text-sm font-body text-muted-foreground md:block">
               Welcome, {user.name}
             </span>
@@ -369,7 +369,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       </motion.header>
 
       {/* Hero Banner */}
-      <div className="container mx-auto max-w-6xl px-4 pb-4 pt-4 sm:pt-6 md:pt-8">
+      <div className="container mx-auto max-w-6xl px-4 pb-4 pt-4 max-[430px]:px-3 sm:pt-6 md:pt-8">
         <motion.div
           key={coverIndex}
           initial={{ opacity: 0 }}
@@ -380,23 +380,23 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
           <img
             src={HERO_IMAGES[coverIndex]}
             alt="Fave x Tea pre-wedding moments"
-            className="h-[250px] w-full object-cover sm:h-[320px] md:h-[420px]"
+            className="h-[235px] w-full object-cover max-[430px]:h-[215px] sm:h-[320px] md:h-[420px]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/40 to-foreground/20" />
-          <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-4 text-left text-white sm:p-6 md:p-10">
-            <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/75 sm:mb-4 sm:text-xs sm:tracking-[0.28em]">
+          <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-4 text-left text-white max-[430px]:p-3 sm:p-6 md:p-10">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/75 max-[430px]:mb-2 max-[430px]:text-[9px] max-[430px]:tracking-[0.18em] sm:mb-4 sm:text-xs sm:tracking-[0.28em]">
               <Images className="h-4 w-4" />
               Wedding memories
             </div>
-            <h2 className="max-w-2xl font-display text-2xl font-bold sm:text-3xl md:text-5xl">
+            <h2 className="max-w-2xl font-display text-2xl font-bold max-[430px]:text-xl sm:text-3xl md:text-5xl">
               Our Wedding Gallery
             </h2>
-            <p className="mt-2 max-w-xl font-body text-xs leading-relaxed text-white/80 sm:mt-3 sm:text-sm md:text-base">
+            <p className="mt-2 max-w-xl font-body text-xs leading-relaxed text-white/80 max-[430px]:mt-1.5 max-[430px]:text-[11px] sm:mt-3 sm:text-sm md:text-base">
               {photos.length > 0
                 ? "A growing collection of the moments, people, and joy shared throughout Fave x Tea's celebration."
                 : "Your gallery is ready. Share the first real moments from the celebration and they will appear here."}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2 sm:mt-6 sm:gap-3">
+            <div className="mt-4 flex flex-wrap gap-2 max-[430px]:mt-3 max-[430px]:gap-1.5 sm:mt-6 sm:gap-3">
               <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
                 {photos.length} total photos
               </div>
@@ -412,7 +412,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       </div>
 
       {/* Event Section Filters */}
-      <div className="container mx-auto max-w-6xl px-4 py-3 sm:py-4">
+      <div className="container mx-auto max-w-6xl px-4 py-3 max-[430px]:px-3 sm:py-4">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {EVENT_SECTIONS.map((section) => (
             <button
@@ -431,7 +431,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       </div>
 
       {/* Gallery */}
-      <div className="container mx-auto max-w-6xl px-4 pb-24 sm:pb-16">
+      <div className="container mx-auto max-w-6xl px-4 pb-28 max-[430px]:px-3 sm:pb-16">
         {isLoadingGallery && (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
             <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -516,15 +516,16 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
-        className="fixed bottom-5 right-4 z-50 sm:bottom-6 sm:right-6"
+        className="fixed right-4 z-50 max-[430px]:right-3 sm:right-6"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
       >
         <button
           type="button"
           onClick={() => setIsUploadOpen(true)}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110 sm:h-14 sm:w-14"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110 max-[430px]:h-11 max-[430px]:w-11 sm:h-14 sm:w-14"
           aria-label="Upload photos"
         >
-          <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
+          <Upload className="h-5 w-5 max-[430px]:h-[18px] max-[430px]:w-[18px] sm:h-6 sm:w-6" />
         </button>
       </motion.div>
 
