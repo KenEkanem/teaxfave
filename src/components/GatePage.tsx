@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import coupleImg from "@/assets/couple-2.jpeg";
+import { LoaderCircle } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
+import coupleImg from "@/assets/couple-3.jpeg";
+import { hasAppsScriptBackend, registerGuest } from "@/lib/apps-script";
 
 interface GatePageProps {
   onEnter: (name: string, email: string) => void;
@@ -10,8 +13,9 @@ const GatePage = ({ onEnter }: GatePageProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
       setError("Please fill in both fields");
@@ -21,7 +25,23 @@ const GatePage = ({ onEnter }: GatePageProps) => {
       setError("Please enter a valid email");
       return;
     }
-    onEnter(name.trim(), email.trim());
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    setIsSubmitting(true);
+
+    try {
+      await registerGuest({ name: trimmedName, email: trimmedEmail });
+      toast(hasAppsScriptBackend() ? "Registration saved" : "Registration saved locally");
+      onEnter(trimmedName, trimmedEmail);
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error ? submitError.message : "Unable to register right now.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -31,7 +51,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
         <img
           src={coupleImg}
           alt="Tee and Fave"
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-foreground/60" />
       </div>
@@ -101,9 +121,17 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             )}
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-body font-semibold text-sm tracking-wide hover:brightness-110 transition-all duration-300 shadow-lg shadow-primary/20"
             >
-              Enter the Celebration
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Registering...
+                </span>
+              ) : (
+                "Enter the Celebration"
+              )}
             </button>
           </motion.form>
 
