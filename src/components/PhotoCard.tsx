@@ -33,10 +33,23 @@ const PhotoCard = ({
   const [isDownloading, setIsDownloading] = useState(false);
 
   const suggestedFileName = `${section}-${contributor}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const driveFileId = getDriveFileId(src);
 
   const handleDownload = async () => {
     try {
       setIsDownloading(true);
+
+      if (driveFileId) {
+        const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+        const link = document.createElement("a");
+        link.href = directDownloadUrl;
+        link.download = `${suggestedFileName || "wedding-photo"}.jpg`;
+        link.rel = "noopener noreferrer";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
 
       const response = await fetch(src);
       if (!response.ok) {
@@ -148,5 +161,14 @@ const PhotoCard = ({
     </>
   );
 };
+
+function getDriveFileId(src: string) {
+  try {
+    const url = new URL(src);
+    return url.searchParams.get("id");
+  } catch {
+    return null;
+  }
+}
 
 export default PhotoCard;
