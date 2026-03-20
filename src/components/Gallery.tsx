@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LoaderCircle, Upload, Images } from "lucide-react";
+import { CalendarDays, LoaderCircle, Upload, Images } from "lucide-react";
 import PhotoCard from "./PhotoCard";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -66,6 +66,23 @@ const INITIAL_PHOTOS: Photo[] = [];
 
 const UPLOAD_SECTIONS = EVENT_SECTIONS.filter((section): section is Exclude<GallerySection, "All"> => section !== "All");
 const HERO_IMAGES = [couple1, couple2, couple3, couple4, couple5];
+const RECEPTION_PROGRAM = [
+  "Guests Arrival",
+  "Introductions",
+  "Entrance Of Parents",
+  "Couple Grand Entrance",
+  "Opening Prayer / Welcome",
+  "Chairman's Opening Remark",
+  "First Game",
+  "Couple On The Dance Floor",
+  "Dinner Served",
+  "Speeches & Toast",
+  "Gift Presentation / Souvenirs",
+  "Vote Of Thanks",
+  "Photography Session",
+  "Open Dance Floor / Party",
+];
+const CHURCH_CEREMONY_PROGRAM: string[] = [];
 
 const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [photos, setPhotos] = useState<Photo[]>(() => {
@@ -90,9 +107,10 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
     }
   });
   const [activeSection, setActiveSection] = useState<string>("All");
+  const [programmeType, setProgrammeType] = useState<"church" | "reception" | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadSection, setUploadSection] = useState<Exclude<GallerySection, "All">>("Reception");
+  const [uploadSection, setUploadSection] = useState<Exclude<GallerySection, "All"> | null>(null);
   const [coverIndex, setCoverIndex] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -224,6 +242,11 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       return;
     }
 
+    if (!uploadSection) {
+      toast("Choose a category");
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(12);
 
@@ -254,6 +277,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
 
       setPhotos((current) => [...nextPhotos, ...current]);
       setSelectedFiles([]);
+      setUploadSection(null);
       setActiveSection("All");
       setUploadProgress(100);
       setIsUploadOpen(false);
@@ -332,7 +356,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         <div className="container mx-auto flex max-w-6xl items-start justify-between gap-3 px-4 py-3 max-[430px]:gap-2 max-[430px]:px-3 sm:items-center sm:gap-4 sm:py-4">
           <div className="min-w-0">
             <h1 className="font-display text-lg font-bold max-[430px]:text-base sm:text-xl md:text-2xl">
-              Fave <span className="text-gold-gradient">x</span> Tea
+              Fave <span className="text-gold-gradient text-script-ampersand">&amp;</span> Tea
             </h1>
             <p className="text-xs text-muted-foreground font-body">March 20, 2026</p>
           </div>
@@ -379,8 +403,8 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         >
           <img
             src={HERO_IMAGES[coverIndex]}
-            alt="Fave x Tea pre-wedding moments"
-            className="h-[235px] w-full object-cover max-[430px]:h-[215px] sm:h-[320px] md:h-[420px]"
+            alt="Fave & Tea pre-wedding moments"
+            className="h-[235px] w-full object-cover object-top max-[430px]:h-[215px] sm:h-[320px] md:h-[420px] md:object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/40 to-foreground/20" />
           <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-4 text-left text-white max-[430px]:p-3 sm:p-6 md:p-10">
@@ -393,7 +417,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             </h2>
             <p className="mt-2 max-w-xl font-body text-xs leading-relaxed text-white/80 max-[430px]:mt-1.5 max-[430px]:text-[11px] sm:mt-3 sm:text-sm md:text-base">
               {photos.length > 0
-                ? "A growing collection of the moments, people, and joy shared throughout Fave x Tea's celebration."
+                ? "A growing collection of the moments, people, and joy shared throughout Fave & Tea's celebration."
                 : "Your gallery is ready. Share the first real moments from the celebration and they will appear here."}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 max-[430px]:mt-3 max-[430px]:gap-1.5 sm:mt-6 sm:gap-3">
@@ -413,6 +437,26 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
 
       {/* Event Section Filters */}
       <div className="container mx-auto max-w-6xl px-4 py-3 max-[430px]:px-3 sm:py-4">
+        <div className="mb-3 flex items-center justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setProgrammeType("church")}
+              className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[11px] font-medium text-foreground shadow-md shadow-foreground/5 ring-1 ring-border/80 transition hover:bg-muted sm:px-4 sm:text-xs"
+            >
+              <CalendarDays className="h-4 w-4" />
+              Order of Events - Church Ceremony
+            </button>
+            <button
+              type="button"
+              onClick={() => setProgrammeType("reception")}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-2 text-[11px] font-medium text-primary-foreground shadow-md shadow-primary/20 transition hover:brightness-105 sm:px-4 sm:text-xs"
+            >
+              <CalendarDays className="h-4 w-4" />
+              Order of Events - Reception
+            </button>
+          </div>
+        </div>
         <div className="flex gap-2 overflow-x-auto pb-2">
           {EVENT_SECTIONS.map((section) => (
             <button
@@ -521,7 +565,11 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       >
         <button
           type="button"
-          onClick={() => setIsUploadOpen(true)}
+          onClick={() => {
+            setSelectedFiles([]);
+            setUploadSection(null);
+            setIsUploadOpen(true);
+          }}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110 max-[430px]:h-11 max-[430px]:w-11 sm:h-14 sm:w-14"
           aria-label="Upload photos"
         >
@@ -529,7 +577,16 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         </button>
       </motion.div>
 
-      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+      <Dialog
+        open={isUploadOpen}
+        onOpenChange={(open) => {
+          setIsUploadOpen(open);
+          if (open) {
+            setSelectedFiles([]);
+            setUploadSection(null);
+          }
+        }}
+      >
         <DialogContent className="overflow-hidden rounded-[1.5rem] border-white/40 bg-background/95 p-0 sm:max-w-xl sm:rounded-[1.75rem]">
           <form onSubmit={handleUpload} className="space-y-5 p-4 sm:space-y-6 sm:p-6">
             <DialogHeader className="space-y-2 text-left">
@@ -593,7 +650,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             </div>
             <p className="text-xs text-muted-foreground">
               {hasAppsScriptBackend()
-                ? "Files will be sent to Google Drive through Apps Script."
+                ? "Files Will Be Uploaded to a Google Drive"
                 : "Apps Script URL not set. Uploads will stay in this browser only."}
             </p>
 
@@ -601,7 +658,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               <Button type="button" variant="ghost" onClick={() => setIsUploadOpen(false)} disabled={isUploading} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button type="submit" className="w-full rounded-full sm:w-auto" disabled={isUploading}>
+              <Button type="submit" className="w-full rounded-full sm:w-auto" disabled={isUploading || !uploadSection}>
                 {isUploading ? (
                   <>
                     <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -613,6 +670,47 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={programmeType !== null} onOpenChange={(open) => setProgrammeType(open ? programmeType : null)}>
+        <DialogContent className="max-h-[82vh] max-w-[92vw] overflow-hidden rounded-[1.35rem] border-white/40 bg-background/95 p-0 sm:max-w-xl sm:rounded-[1.5rem]">
+          <div className="space-y-4 p-4 sm:p-5">
+            <DialogHeader className="space-y-2 pr-8 text-left">
+              <DialogTitle className="font-display text-lg sm:text-xl">
+                {programmeType === "church"
+                  ? "Order of Events - Church Ceremony"
+                  : "Order of Events - Reception"}
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed">
+                {programmeType === "church"
+                  ? "Church ceremony programme for the day."
+                  : "Reception programme for the day."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="glass-card max-h-[58vh] overflow-y-auto rounded-[1.1rem] p-3 sm:max-h-[60vh] sm:rounded-[1.25rem] sm:p-4">
+              {programmeType === "church" && CHURCH_CEREMONY_PROGRAM.length === 0 ? (
+                <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-6 text-sm text-muted-foreground">
+                  Church ceremony order of events will appear here once the programme list is added.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {(programmeType === "church" ? CHURCH_CEREMONY_PROGRAM : RECEPTION_PROGRAM).map((item, index) => (
+                    <div
+                      key={item}
+                      className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
+                        {index + 1}
+                      </div>
+                      <p className="pt-1 text-sm text-foreground">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

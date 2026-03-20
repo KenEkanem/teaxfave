@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-import coupleImg from "@/assets/couple-3.jpeg";
+import coupleImg from "@/assets/gate-screen.jpeg";
 import { hasAppsScriptBackend, registerGuest, restoreGuestByEmail } from "@/lib/apps-script";
 
 interface GatePageProps {
@@ -58,7 +58,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
       <div className="absolute inset-0">
         <img
           src={coupleImg}
-          alt="Fave x Tea"
+          alt="Fave & Tea"
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-foreground/60" />
@@ -83,7 +83,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             </p>
             <h1 className="font-display text-3xl font-bold leading-tight text-foreground sm:text-4xl md:text-5xl">
               Fave{" "}
-              <span className="text-gold-gradient">x</span>{" "}
+              <span className="text-gold-gradient text-script-ampersand">&amp;</span>{" "}
               Tea
             </h1>
             <p className="mt-2 font-display text-base italic text-muted-foreground sm:mt-3 sm:text-lg">
