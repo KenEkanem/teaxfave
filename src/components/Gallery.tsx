@@ -82,7 +82,20 @@ const RECEPTION_PROGRAM = [
   "Photography Session",
   "Open Dance Floor / Party",
 ];
-const CHURCH_CEREMONY_PROGRAM: string[] = [];
+const CHURCH_CEREMONY_PROGRAM = [
+  "Arrival [Music] - Media",
+  "Opening Prayer - Pastor Daniel Essien [1 min]",
+  "Worship [Groom enters] - Sweet Incense [20 mins]",
+  "Welcome the Bride - Pastor Emmanuel Obeten [5 mins]",
+  "The Joining - Pastor Goodluck Opue [15 mins]",
+  "Word - Pastor Aniekan Umoh [25 mins]",
+  "The Communion - Pastor Anointed Enoh [10 mins]",
+  "Blessing of the Union - Pastor Goodluck Opue [10 mins]",
+  "Signing & Presentation of Marriage Certificate [10 mins]",
+  "Offering - Pastor Uma Ukpai [5 mins]",
+  "Photograph with Officiating Ministers - Pastor Emmanuel Obeten [3 mins]",
+  "Announcement & Closing - Pastor Emmanuel Obeten [3 mins]",
+];
 
 const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [photos, setPhotos] = useState<Photo[]>(() => {
@@ -114,6 +127,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [coverIndex, setCoverIndex] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadCounter, setUploadCounter] = useState<{ currentFile: number; totalFiles: number } | null>(null);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [isLoadingGallery, setIsLoadingGallery] = useState(hasAppsScriptBackend());
   const uploadedUrlsRef = useRef<string[]>([]);
@@ -248,16 +262,22 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
     }
 
     setIsUploading(true);
-    setUploadProgress(12);
+    setUploadProgress(0);
+    setUploadCounter({
+      currentFile: 1,
+      totalFiles: selectedFiles.length,
+    });
 
     try {
-      setUploadProgress(28);
       const uploadedPhotos = await uploadGuestPhotos({
         guest: user,
         section: uploadSection,
         files: selectedFiles,
+        onProgress: ({ currentFile, totalFiles, progress }) => {
+          setUploadCounter({ currentFile, totalFiles });
+          setUploadProgress(progress);
+        },
       });
-      setUploadProgress(76);
 
       const nextPhotos =
         uploadedPhotos && uploadedPhotos.length > 0
@@ -292,6 +312,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       toast(message);
     } finally {
       window.setTimeout(() => setUploadProgress(0), 250);
+      window.setTimeout(() => setUploadCounter(null), 250);
       setIsUploading(false);
     }
   };
@@ -616,7 +637,11 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               {isUploading && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>Sharing moment...</span>
+                    <span>
+                      {uploadCounter
+                        ? `Uploading ${uploadCounter.currentFile} of ${uploadCounter.totalFiles}`
+                        : "Uploading..."}
+                    </span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <Progress value={uploadProgress} className="h-1.5 bg-muted" />
@@ -690,25 +715,19 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             </DialogHeader>
 
             <div className="glass-card max-h-[58vh] overflow-y-auto rounded-[1.1rem] p-3 sm:max-h-[60vh] sm:rounded-[1.25rem] sm:p-4">
-              {programmeType === "church" && CHURCH_CEREMONY_PROGRAM.length === 0 ? (
-                <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-6 text-sm text-muted-foreground">
-                  Church ceremony order of events will appear here once the programme list is added.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {(programmeType === "church" ? CHURCH_CEREMONY_PROGRAM : RECEPTION_PROGRAM).map((item, index) => (
-                    <div
-                      key={item}
-                      className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5"
-                    >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
-                        {index + 1}
-                      </div>
-                      <p className="pt-1 text-sm text-foreground">{item}</p>
+              <div className="space-y-2">
+                {(programmeType === "church" ? CHURCH_CEREMONY_PROGRAM : RECEPTION_PROGRAM).map((item, index) => (
+                  <div
+                    key={item}
+                    className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
+                      {index + 1}
                     </div>
-                  ))}
-                </div>
-              )}
+                    <p className="pt-1 text-sm text-foreground">{item}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </DialogContent>

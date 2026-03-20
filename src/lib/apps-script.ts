@@ -14,6 +14,12 @@ export interface UploadedPhoto {
   uploaded: true;
 }
 
+interface UploadProgressState {
+  currentFile: number;
+  totalFiles: number;
+  progress: number;
+}
+
 interface AppsScriptResponse<T> {
   ok: boolean;
   error?: string;
@@ -55,28 +61,64 @@ export async function uploadGuestPhotos(args: {
   guest: Guest;
   section: string;
   files: File[];
+  onProgress?: (state: UploadProgressState) => void;
 }) {
   if (!APPS_SCRIPT_URL) {
     return null;
   }
 
-  const files = await Promise.all(
-    args.files.map(async (file) => ({
-      name: file.name,
-      type: file.type || "application/octet-stream",
-      contentBase64: await fileToBase64(file),
-    })),
-  );
+  const uploadedPhotos: UploadedPhoto[] = [];
+  const totalFiles = args.files.length;
 
-  const response = await postToAppsScript<{ photos: UploadedPhoto[] }>({
-    action: "uploadPhotos",
-    name: args.guest.name,
-    email: args.guest.email,
-    section: args.section,
-    files,
-  });
+  for (const [index, file] of args.files.entries()) {
+    const currentFile = index + 1;
 
-  return response.data?.photos ?? [];
+    args.onProgress?.({
+      currentFile,
+      totalFiles,
+      progress: Math.round((index / totalFiles) * 100),
+    });
+
+    const contentBase64 = await fileToBase64(file, (fileProgress) => {
+      const overallProgress = ((index + fileProgress * 0.8) / totalFiles) * 100;
+
+      args.onProgress?.({
+        currentFile,
+        totalFiles,
+        progress: Math.max(1, Math.min(99, Math.round(overallProgress))),
+      });
+    });
+
+    args.onProgress?.({
+      currentFile,
+      totalFiles,
+      progress: Math.max(1, Math.min(99, Math.round(((index + 0.9) / totalFiles) * 100))),
+    });
+
+    const response = await postToAppsScript<{ photos: UploadedPhoto[] }>({
+      action: "uploadPhotos",
+      name: args.guest.name,
+      email: args.guest.email,
+      section: args.section,
+      files: [
+        {
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          contentBase64,
+        },
+      ],
+    });
+
+    uploadedPhotos.push(...(response.data?.photos ?? []));
+
+    args.onProgress?.({
+      currentFile,
+      totalFiles,
+      progress: Math.round((currentFile / totalFiles) * 100),
+    });
+  }
+
+  return uploadedPhotos;
 }
 
 export async function deleteGuestPhoto(args: {
@@ -125,9 +167,17 @@ async function postToAppsScript<T = unknown>(payload: Record<string, unknown>) {
   return body;
 }
 
-function fileToBase64(file: File) {
+function fileToBase64(file: File, onProgress?: (progress: number) => void) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
+
+    reader.onprogress = (event) => {
+      if (!event.lengthComputable || !onProgress) {
+        return;
+      }
+
+      onProgress(event.loaded / event.total);
+    };
 
     reader.onload = () => {
       if (typeof reader.result !== "string") {
