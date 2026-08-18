@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { SyntheticEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { Download, LoaderCircle, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
+import { getDriveFileId, getDriveThumbnailUrl } from "@/lib/drive-images";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,19 @@ const PhotoCard = ({
 
   const suggestedFileName = `${section}-${contributor}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const driveFileId = getDriveFileId(src);
+  const cardSrc = getDriveThumbnailUrl(src, 640);
+  const previewSrc = getDriveThumbnailUrl(src, 1600);
+
+  const fallBackToOriginal = (event: SyntheticEvent<HTMLImageElement>) => {
+    const image = event.currentTarget;
+
+    if (image.dataset.fallbackApplied === "true") {
+      return;
+    }
+
+    image.dataset.fallbackApplied = "true";
+    image.src = src;
+  };
 
   const handleDownload = async () => {
     try {
@@ -105,10 +119,14 @@ const PhotoCard = ({
                 aria-label={`View photo by ${contributor}`}
               >
                 <img
-                  src={src}
+                  src={cardSrc}
                   alt={`Photo by ${contributor}`}
                   className="aspect-[4/5] w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
+                  decoding="async"
+                  fetchPriority={index < 4 ? "high" : "auto"}
+                  sizes="(min-width: 1024px) 280px, (min-width: 768px) 33vw, 50vw"
+                  onError={fallBackToOriginal}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
               </button>
@@ -133,9 +151,11 @@ const PhotoCard = ({
 
             <div className="overflow-hidden rounded-[1.25rem] bg-muted/40">
               <img
-                src={src}
+                src={previewSrc}
                 alt={`Photo by ${contributor}`}
                 className="max-h-[72vh] w-full object-contain"
+                decoding="async"
+                onError={fallBackToOriginal}
               />
             </div>
 
@@ -161,14 +181,5 @@ const PhotoCard = ({
     </>
   );
 };
-
-function getDriveFileId(src: string) {
-  try {
-    const url = new URL(src);
-    return url.searchParams.get("id");
-  } catch {
-    return null;
-  }
-}
 
 export default PhotoCard;
