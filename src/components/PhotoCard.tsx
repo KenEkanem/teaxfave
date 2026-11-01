@@ -35,7 +35,7 @@ const PhotoCard = ({
 
   const suggestedFileName = `${section}-${contributor}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const driveFileId = getDriveFileId(src);
-  const cardSrc = getDriveThumbnailUrl(src, 640);
+  const cardSrc = getDriveThumbnailUrl(src, 480);
   const previewSrc = getDriveThumbnailUrl(src, 1600);
 
   const fallBackToOriginal = (event: SyntheticEvent<HTMLImageElement>) => {

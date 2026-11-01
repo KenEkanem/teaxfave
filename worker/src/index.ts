@@ -13,10 +13,11 @@ interface ThumbMetadata {
   contentType: string;
 }
 
-const ALLOWED_WIDTHS = new Set(["640", "1600"]);
+// 640 stays allowed for site builds from before cards switched to 480.
+const ALLOWED_WIDTHS = new Set(["480", "640", "1600"]);
 const FILE_ID_PATTERN = /^[A-Za-z0-9_-]{10,}$/;
 const PHOTO_LIST_KEY = "photos";
-const PREWARM_WIDTH = "640";
+const PREWARM_WIDTH = "480";
 // Free plan allows 50 subrequests per invocation; leave room for the Apps Script call and KV.
 const PREWARM_LIMIT = 40;
 
@@ -149,7 +150,7 @@ async function prewarmThumbnails(photos: GalleryPhoto[], env: Env) {
   }
 
   // One list call instead of a read per photo.
-  const existing = await listKeys(env, `thumb/${PREWARM_WIDTH}/`);
+  const existing = await listKeys(env, `img/${PREWARM_WIDTH}/`);
   const missing = keys.filter(({ key }) => !existing.has(key)).slice(0, PREWARM_LIMIT);
 
   for (const { fileId, key } of missing) {
@@ -188,10 +189,17 @@ async function putThumb(env: Env, key: string, body: ArrayBuffer, contentType: s
 }
 
 async function fetchDriveThumbnail(fileId: string, width: string) {
-  const response = await fetch(
-    `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w${width}`,
-    { redirect: "follow" },
+  const id = encodeURIComponent(fileId);
+
+  // "-rw" asks Google for WebP, about a third the size of the JPEG thumbnail.
+  return (
+    (await fetchImage(`https://lh3.googleusercontent.com/d/${id}=w${width}-rw`)) ??
+    (await fetchImage(`https://drive.google.com/thumbnail?id=${id}&sz=w${width}`))
   );
+}
+
+async function fetchImage(url: string) {
+  const response = await fetch(url, { redirect: "follow" });
 
   if (!response.ok || !response.headers.get("Content-Type")?.startsWith("image/")) {
     return null;
@@ -211,7 +219,7 @@ function getDriveFileId(src: string) {
 }
 
 function thumbKey(width: string, fileId: string) {
-  return `thumb/${width}/${fileId}`;
+  return `img/${width}/${fileId}`;
 }
 
 function imageHeaders(contentType: string, cacheStatus: "HIT" | "MISS") {
