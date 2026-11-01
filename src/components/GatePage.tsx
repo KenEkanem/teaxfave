@@ -4,6 +4,7 @@ import { LoaderCircle } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import coupleImg from "@/assets/gate-screen.jpeg";
 import { hasAppsScriptBackend, registerGuest, restoreGuestByEmail } from "@/lib/apps-script";
+import { PhotoOrnaments } from "./Ornaments";
 
 interface GatePageProps {
   onEnter: (name: string, email: string) => void;
@@ -53,7 +54,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-10">
+    <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-10">
       {/* Background */}
       <div className="absolute inset-0">
         <img
@@ -63,6 +64,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-foreground/60" />
       </div>
+      <PhotoOrnaments />
 
       {/* Glass Card */}
       <motion.div
@@ -130,7 +132,7 @@ const GatePage = ({ onEnter }: GatePageProps) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-xl bg-primary py-3 text-sm font-semibold tracking-wide text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:brightness-110 sm:py-3.5"
+              className="gold-shimmer w-full rounded-xl py-3 text-sm font-semibold tracking-wide transition-all duration-300 hover:brightness-110 active:scale-[0.98] sm:py-3.5"
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">

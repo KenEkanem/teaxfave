@@ -1,10 +1,11 @@
 import { SyntheticEvent, useState } from "react";
 import { motion } from "framer-motion";
-import { Download, LoaderCircle, Trash2 } from "lucide-react";
+import { Download, LoaderCircle, Trash2, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { getDriveFileId, getDriveThumbnailUrl } from "@/lib/drive-images";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -32,6 +33,7 @@ const PhotoCard = ({
 }: PhotoCardProps) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isPreviewLoaded, setIsPreviewLoaded] = useState(false);
 
   const suggestedFileName = `${section}-${contributor}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const driveFileId = getDriveFileId(src);
@@ -92,11 +94,11 @@ const PhotoCard = ({
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, delay: Math.min(index, 6) * 0.06, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ y: -4, scale: 1.02 }}
           className="group min-w-0"
         >
-          <div className="glass-card overflow-hidden rounded-[1.15rem] sm:rounded-2xl">
+          <div className="glass-card overflow-hidden rounded-xl transition-[box-shadow,border-color] duration-500 group-hover:border-primary/40 group-hover:shadow-[0_0_28px_-4px_hsla(43,85%,55%,0.45)] sm:rounded-2xl">
             <div className="relative overflow-hidden">
               {canDelete && (
                 <button
@@ -106,10 +108,10 @@ const PhotoCard = ({
                     onDelete?.();
                   }}
                   disabled={isDeleting}
-                  className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-destructive shadow-md transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-60 sm:right-2.5 sm:top-2.5 sm:h-7 sm:w-7"
+                  className="absolute right-1.5 top-1.5 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-destructive shadow-md transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-60 sm:right-2 sm:top-2"
                   aria-label="Delete uploaded photo"
                 >
-                  <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <Trash2 className="h-3 w-3" />
                 </button>
               )}
               <button
@@ -125,56 +127,85 @@ const PhotoCard = ({
                   loading="lazy"
                   decoding="async"
                   fetchPriority={index < 4 ? "high" : "auto"}
-                  sizes="(min-width: 1024px) 280px, (min-width: 768px) 33vw, 50vw"
+                  sizes="(min-width: 1024px) 180px, (min-width: 768px) 20vw, (min-width: 640px) 25vw, 33vw"
                   onError={fallBackToOriginal}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
               </button>
             </div>
-            <div className="flex items-center justify-between gap-2 p-2.5 sm:p-3">
-              <span className="truncate text-[10px] font-body capitalize text-muted-foreground sm:text-[11px]">{section}</span>
-              <span className="max-w-[60%] truncate rounded-full bg-primary/10 px-2 py-1 text-[10px] font-body font-medium text-primary sm:px-2.5 sm:text-[11px]">
+            <div className="flex items-center justify-between gap-1.5 px-2 py-1.5">
+              <span className="truncate text-[9px] font-body capitalize text-muted-foreground sm:text-[10px]">{section}</span>
+              <span className="hidden max-w-[55%] truncate rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-body font-medium text-primary sm:inline">
                 {contributor}
               </span>
             </div>
           </div>
         </motion.div>
 
-        <DialogContent className="max-w-[94vw] overflow-hidden rounded-[1.5rem] border-white/40 bg-background/95 p-0 sm:max-w-3xl">
-          <div className="space-y-4 p-4 sm:p-6">
-            <DialogHeader className="space-y-2 pr-10 text-left">
-              <DialogTitle className="font-display text-xl sm:text-2xl">{contributor}</DialogTitle>
-              <DialogDescription>
-                {section}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="overflow-hidden rounded-[1.25rem] bg-muted/40">
-              <img
-                src={previewSrc}
-                alt={`Photo by ${contributor}`}
-                className="max-h-[72vh] w-full object-contain"
-                decoding="async"
-                onError={fallBackToOriginal}
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <Button
+        <DialogContent
+          hideCloseButton
+          className="w-auto max-w-[94vw] gap-0 border-0 bg-transparent p-0 shadow-none sm:max-w-4xl"
+        >
+          <div
+            className={`relative ${isPreviewLoaded ? "" : "min-h-[45vh] min-w-[80vw] sm:min-w-[28rem]"}`}
+          >
+            <DialogClose asChild>
+              <motion.button
                 type="button"
-                variant="outline"
-                onClick={handleDownload}
-                disabled={isDownloading}
-                className="rounded-full"
+                initial={{ scale: 0, rotate: -90, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 420, damping: 18, delay: 0.1 }}
+                whileHover={{ scale: 1.12 }}
+                whileTap={{ scale: 0.88 }}
+                className="absolute -left-2 -top-2 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-900 shadow-[0_8px_24px_rgba(0,0,0,0.35)] ring-1 ring-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:-left-3 sm:-top-3 sm:h-11 sm:w-11"
+                aria-label="Close photo"
               >
-                {isDownloading ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                Download
-              </Button>
-            </div>
+                <X className="h-5 w-5" strokeWidth={2.5} />
+              </motion.button>
+            </DialogClose>
+
+            {!isPreviewLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/30">
+                <LoaderCircle className="h-6 w-6 animate-spin text-white" />
+              </div>
+            )}
+
+            <img
+              src={previewSrc}
+              alt={`Photo by ${contributor}`}
+              className={`block h-auto max-h-[82vh] w-auto max-w-[94vw] rounded-2xl object-contain shadow-2xl transition-opacity duration-300 sm:max-w-4xl ${
+                isPreviewLoaded ? "opacity-100" : "absolute inset-0 opacity-0"
+              }`}
+              decoding="async"
+              onLoad={() => setIsPreviewLoaded(true)}
+              onError={fallBackToOriginal}
+            />
+
+            {isPreviewLoaded && (
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 rounded-b-2xl bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 pt-10 sm:p-4 sm:pt-12">
+                <DialogHeader className="min-w-0 space-y-0.5 text-left">
+                  <DialogTitle className="truncate font-display text-base text-white sm:text-lg">
+                    {contributor}
+                  </DialogTitle>
+                  <DialogDescription className="truncate text-xs text-white/80">{section}</DialogDescription>
+                </DialogHeader>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="shrink-0 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-white/90"
+                >
+                  {isDownloading ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Download
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

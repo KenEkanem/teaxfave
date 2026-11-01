@@ -1,7 +1,9 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, LoaderCircle, Upload, Images } from "lucide-react";
+import { CalendarDays, LoaderCircle, LogOut, Upload } from "lucide-react";
 import PhotoCard from "./PhotoCard";
+import PhotoGrid from "./PhotoGrid";
+import { PageBackground, PhotoOrnaments } from "./Ornaments";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Progress } from "./ui/progress";
@@ -13,6 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { toast } from "./ui/sonner";
 import {
   deleteGuestPhoto,
@@ -62,6 +72,7 @@ interface ContributorGroup {
 }
 
 const UPLOADED_PHOTOS_STORAGE_KEY = "tee-fave-uploaded-photos";
+const GALLERY_CACHE_STORAGE_KEY = "tee-fave-gallery-cache";
 
 const INITIAL_PHOTOS: Photo[] = [];
 
@@ -98,6 +109,17 @@ const CHURCH_CEREMONY_PROGRAM = [
   "Announcement & Closing - Pastor Emmanuel Obeten [3 mins]",
 ];
 
+// The last shared gallery this browser saw, so repeat visits draw instantly
+// while the fresh list loads in the background.
+function readCachedGallery() {
+  try {
+    const cachedPhotos = JSON.parse(window.localStorage.getItem(GALLERY_CACHE_STORAGE_KEY) ?? "null");
+    return Array.isArray(cachedPhotos) && cachedPhotos.length > 0 ? (cachedPhotos as Photo[]) : null;
+  } catch {
+    return null;
+  }
+}
+
 const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [photos, setPhotos] = useState<Photo[]>(() => {
     if (typeof window === "undefined") {
@@ -105,7 +127,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
     }
 
     if (hasAppsScriptBackend()) {
-      return INITIAL_PHOTOS;
+      return readCachedGallery() ?? INITIAL_PHOTOS;
     }
 
     try {
@@ -126,11 +148,15 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadSection, setUploadSection] = useState<Exclude<GallerySection, "All"> | null>(null);
   const [coverIndex, setCoverIndex] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const gallerySectionRef = useRef<HTMLDivElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadCounter, setUploadCounter] = useState<{ currentFile: number; totalFiles: number } | null>(null);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
-  const [isLoadingGallery, setIsLoadingGallery] = useState(hasAppsScriptBackend());
+  const [isLoadingGallery, setIsLoadingGallery] = useState(
+    () => hasAppsScriptBackend() && typeof window !== "undefined" && !readCachedGallery(),
+  );
   const uploadedUrlsRef = useRef<string[]>([]);
 
   const filtered = useMemo(() => {
@@ -180,6 +206,14 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
   }, []);
 
   useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 40);
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
     if (HERO_IMAGES.length <= 1) {
       return;
     }
@@ -199,6 +233,13 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
 
   useEffect(() => {
     if (hasAppsScriptBackend()) {
+      if (photos.length > 0) {
+        try {
+          window.localStorage.setItem(GALLERY_CACHE_STORAGE_KEY, JSON.stringify(photos));
+        } catch {
+          // Storage full or blocked; the gallery still works, it just won't draw instantly next time.
+        }
+      }
       return;
     }
 
@@ -215,8 +256,6 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
     let cancelled = false;
 
     const loadPhotos = async () => {
-      setIsLoadingGallery(true);
-
       try {
         const remotePhotos = await listGalleryPhotos();
 
@@ -369,105 +408,175 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
     }
   };
 
+  const renderPhotoCard = (photo: Photo, index: number) => (
+    <PhotoCard
+      key={photo.id}
+      src={photo.src}
+      contributor={photo.contributor}
+      section={photo.section}
+      index={index}
+      canDelete={canDeletePhoto(photo)}
+      isDeleting={deletingPhotoId === photo.id}
+      onDelete={() => handleDeletePhoto(photo)}
+    />
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative isolate min-h-screen">
+      <PageBackground />
+      <div className="relative z-10">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="sticky top-0 z-50 glass-card-strong border-b border-border/50"
+        className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,border-color] duration-500 ${
+          isScrolled ? "border-b border-border/60 bg-background/85 shadow-sm backdrop-blur-xl" : "border-b border-transparent"
+        }`}
       >
-        <div className="container mx-auto flex max-w-6xl items-start justify-between gap-3 px-4 py-3 max-[430px]:gap-2 max-[430px]:px-3 sm:items-center sm:gap-4 sm:py-4">
+        <div className="container mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 max-[430px]:px-3 sm:py-4">
           <div className="min-w-0">
-            <h1 className="font-display text-lg font-bold max-[430px]:text-base sm:text-xl md:text-2xl">
+            <h1 className="font-display text-lg font-semibold tracking-wide text-foreground max-[430px]:text-base sm:text-xl md:text-2xl">
               Fave <span className="text-gold-gradient text-script-ampersand">&amp;</span> Tea
             </h1>
-            <p className="text-xs text-muted-foreground font-body">March 20, 2026</p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2 max-[430px]:gap-1.5 sm:gap-3">
-            <span className="hidden text-sm font-body text-muted-foreground md:block">
-              Welcome, {user.name}
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm font-body text-foreground/70 md:block">
+              Welcome, <span className="text-foreground">{user.name}</span>
             </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onLogout}
-              className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground"
-            >
-              Logout
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsUploadOpen(true)}
-              className="hidden h-9 rounded-full border-border/70 bg-background/70 sm:inline-flex"
-            >
-              <Upload className="h-4 w-4" />
-              Upload
-            </Button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 sm:h-9 sm:w-9">
-              <span className="text-primary font-body font-semibold text-sm">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
+                  className="gold-shimmer flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-10 sm:w-10"
+                  aria-label="Open profile menu"
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={10}
+                className="w-56 rounded-2xl border-primary/20 bg-popover/95 p-1.5 backdrop-blur-xl"
+              >
+                <DropdownMenuLabel className="px-2.5 py-2 font-normal">
+                  <p className="truncate font-display text-base text-foreground">{user.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-primary/15" />
+                <DropdownMenuItem
+                  onSelect={onLogout}
+                  className="cursor-pointer gap-2 rounded-xl px-2.5 py-2 text-sm focus:bg-primary/15 focus:text-foreground"
+                >
+                  <LogOut className="h-4 w-4 text-primary" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </motion.header>
 
-      {/* Hero Banner */}
-      <div className="container mx-auto max-w-6xl px-4 pb-4 pt-4 max-[430px]:px-3 sm:pt-6 md:pt-8">
-        <motion.div
-          key={coverIndex}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          className="relative overflow-hidden rounded-[1.5rem] border border-white/40 sm:rounded-[2rem]"
-        >
-          <img
+      {/* Hero */}
+      <section className="relative h-[100svh] min-h-[600px] overflow-hidden bg-background">
+        <AnimatePresence initial={false}>
+          <motion.img
+            key={coverIndex}
             src={HERO_IMAGES[coverIndex]}
             alt="Fave & Tea pre-wedding moments"
-            className="h-[235px] w-full object-cover object-top max-[430px]:h-[215px] sm:h-[320px] md:h-[420px] md:object-center"
+            initial={{ opacity: 0, scale: 1.08 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ opacity: { duration: 1.2 }, scale: { duration: 6, ease: "easeOut" } }}
+            className="absolute inset-0 h-full w-full object-cover object-top md:object-[25%_center]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/40 to-foreground/20" />
-          <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col justify-end p-4 text-left text-white max-[430px]:p-3 sm:p-6 md:p-10">
-            <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/75 max-[430px]:mb-2 max-[430px]:text-[9px] max-[430px]:tracking-[0.18em] sm:mb-4 sm:text-xs sm:tracking-[0.28em]">
-              <Images className="h-4 w-4" />
-              Wedding memories
+        </AnimatePresence>
+
+        {/* Photo melts into cream: downward on phones, to the right on wider screens. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent via-35% to-background to-[72%] md:hidden" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent from-25% via-background/80 via-[52%] to-background to-[70%] md:block" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-background/70 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_30%,hsla(24,80%,88%,0.55),transparent_60%)]" />
+
+        <PhotoOrnaments />
+
+        <div className="container relative mx-auto flex h-full max-w-6xl items-end px-4 pb-20 max-[430px]:px-3 md:items-center md:pb-0">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full text-center md:ml-auto md:w-[46%] md:text-left"
+          >
+            <div className="flex items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.3em] text-foreground/60 md:justify-start sm:text-xs">
+              <span className="h-px w-8 bg-primary/60" />
+              20 March 2026
+              <span className="h-px w-8 bg-primary/60" />
             </div>
-            <h2 className="max-w-2xl font-display text-2xl font-bold max-[430px]:text-xl sm:text-3xl md:text-5xl">
-              Our Wedding Gallery
+            <p className="mt-5 font-display text-2xl italic text-foreground/70 sm:text-3xl">Our wedding gallery</p>
+            <h2 className="mt-1 font-display text-5xl font-medium leading-[1.05] text-foreground sm:text-6xl lg:text-7xl">
+              Fave <span className="text-gold-gradient text-script-ampersand">&amp;</span> Tea
             </h2>
-            <p className="mt-2 max-w-xl font-body text-xs leading-relaxed text-white/80 max-[430px]:mt-1.5 max-[430px]:text-[11px] sm:mt-3 sm:text-sm md:text-base">
+            <p className="mx-auto mt-5 max-w-md font-body text-sm leading-relaxed text-foreground/65 md:mx-0 sm:text-base">
               {photos.length > 0
-                ? "A growing collection of the moments, people, and joy shared throughout Fave & Tea's celebration."
-                : "Your gallery is ready. Share the first real moments from the celebration and they will appear here."}
+                ? "Every smile, every dance, every quiet glance, shared by the people who were there."
+                : "Your gallery is ready. Share the first moments from the celebration and they will appear here."}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2 max-[430px]:mt-3 max-[430px]:gap-1.5 sm:mt-6 sm:gap-3">
-              <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
-                {photos.length} total photos
-              </div>
-              <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
-                {totalContributors} total contributors
-              </div>
-              <div className="rounded-full bg-white/14 px-3 py-2 text-[11px] font-body text-white backdrop-blur-md sm:px-4 sm:text-xs">
-                {totalMoments} total moments
-              </div>
+            <p className="mt-4 text-xs tracking-wide text-foreground/50">
+              {photos.length} photos · {totalContributors} contributors · {totalMoments} moments
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+              <button
+                type="button"
+                onClick={() => gallerySectionRef.current?.scrollIntoView({ behavior: "smooth" })}
+                className="rounded-full bg-foreground/85 px-7 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-background shadow-lg shadow-foreground/10 transition hover:-translate-y-0.5 hover:bg-foreground"
+              >
+                View gallery
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFiles([]);
+                  setUploadSection(null);
+                  setIsUploadOpen(true);
+                }}
+                className="rounded-full border border-foreground/25 bg-background/60 px-7 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-foreground backdrop-blur transition hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+              >
+                Share photos
+              </button>
             </div>
+          </motion.div>
+        </div>
+
+        {HERO_IMAGES.length > 1 && (
+          <div className="absolute inset-x-0 bottom-6 flex justify-center gap-2">
+            {HERO_IMAGES.map((image, index) => (
+              <button
+                key={image}
+                type="button"
+                onClick={() => setCoverIndex(index)}
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  index === coverIndex ? "w-6 bg-foreground/60" : "w-2 bg-foreground/25 hover:bg-foreground/40"
+                }`}
+                aria-label={`Show photo ${index + 1}`}
+              />
+            ))}
           </div>
-        </motion.div>
-      </div>
+        )}
+      </section>
 
       {/* Event Section Filters */}
-      <div className="container mx-auto max-w-6xl px-4 py-3 max-[430px]:px-3 sm:py-4">
+      <div
+        ref={gallerySectionRef}
+        className="container mx-auto max-w-6xl scroll-mt-20 px-4 pb-3 pt-10 max-[430px]:px-3 sm:pb-4 sm:pt-14"
+      >
         <div className="mb-3 flex items-center justify-end">
           <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={() => setProgrammeType("church")}
-              className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[11px] font-medium text-foreground shadow-md shadow-foreground/5 ring-1 ring-border/80 transition hover:bg-muted sm:px-4 sm:text-xs"
+              className="glass-card inline-flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-medium text-foreground transition hover:border-primary/40 hover:text-primary sm:px-4 sm:text-xs"
             >
               <CalendarDays className="h-4 w-4" />
               Order of Events - Church Ceremony
@@ -475,7 +584,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             <button
               type="button"
               onClick={() => setProgrammeType("reception")}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-2 text-[11px] font-medium text-primary-foreground shadow-md shadow-primary/20 transition hover:brightness-105 sm:px-4 sm:text-xs"
+              className="gold-shimmer inline-flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold transition hover:brightness-110 sm:px-4 sm:text-xs"
             >
               <CalendarDays className="h-4 w-4" />
               Order of Events - Reception
@@ -489,8 +598,8 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               onClick={() => setActiveSection(section)}
               className={`shrink-0 rounded-full px-3 py-2 text-[11px] font-medium whitespace-nowrap transition-all duration-300 sm:px-4 sm:text-xs ${
                 activeSection === section
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  : "glass-card text-muted-foreground hover:text-foreground"
+                  ? "gold-shimmer font-semibold"
+                  : "glass-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
               }`}
             >
               {section}
@@ -522,26 +631,13 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
                   <h3 className="font-display text-lg font-semibold text-foreground sm:text-xl">
                     {group.contributor}
                   </h3>
-                  <div className="h-px flex-1 bg-border/70" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-primary/50 via-primary/15 to-transparent" />
                   <p className="text-[11px] text-muted-foreground sm:text-xs">
                     {group.photos.length} upload{group.photos.length > 1 ? "s" : ""}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  {group.photos.map((photo, index) => (
-                    <PhotoCard
-                      key={photo.id}
-                      src={photo.src}
-                      contributor={photo.contributor}
-                      section={photo.section}
-                      index={index}
-                      canDelete={canDeletePhoto(photo)}
-                      isDeleting={deletingPhotoId === photo.id}
-                      onDelete={() => handleDeletePhoto(photo)}
-                    />
-                  ))}
-                </div>
+                <PhotoGrid photos={group.photos} renderPhoto={renderPhotoCard} />
               </motion.section>
             ))}
           </div>
@@ -553,20 +649,8 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4"
             >
-              {filtered.map((photo, i) => (
-                <PhotoCard
-                  key={photo.id}
-                  src={photo.src}
-                  contributor={photo.contributor}
-                  section={photo.section}
-                  index={i}
-                  canDelete={canDeletePhoto(photo)}
-                  isDeleting={deletingPhotoId === photo.id}
-                  onDelete={() => handleDeletePhoto(photo)}
-                />
-              ))}
+              <PhotoGrid photos={filtered} renderPhoto={renderPhotoCard} />
             </motion.div>
           </AnimatePresence>
         )}
@@ -595,10 +679,12 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             setUploadSection(null);
             setIsUploadOpen(true);
           }}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110 max-[430px]:h-11 max-[430px]:w-11 sm:h-14 sm:w-14"
+          className="group relative flex h-14 w-14 items-center justify-center rounded-full transition-transform duration-300 hover:scale-110 active:scale-95 sm:h-16 sm:w-16"
           aria-label="Upload photos"
         >
-          <Upload className="h-5 w-5 max-[430px]:h-[18px] max-[430px]:w-[18px] sm:h-6 sm:w-6" />
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/30 [animation-duration:2.4s] motion-reduce:hidden" />
+          <span className="gold-shimmer absolute inset-0 rounded-full" />
+          <Upload className="relative z-10 h-6 w-6 text-primary-foreground transition-transform duration-300 group-hover:-translate-y-0.5 sm:h-7 sm:w-7" />
         </button>
       </motion.div>
 
@@ -723,7 +809,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
                 {(programmeType === "church" ? CHURCH_CEREMONY_PROGRAM : RECEPTION_PROGRAM).map((item, index) => (
                   <div
                     key={item}
-                    className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5"
+                    className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-background/50 px-3 py-2.5"
                   >
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
                       {index + 1}
@@ -736,6 +822,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

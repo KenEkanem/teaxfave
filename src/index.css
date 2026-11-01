@@ -81,14 +81,78 @@
     border: 1px solid hsla(36, 33%, 97%, 0.5);
     box-shadow: var(--glass-shadow);
   }
+
+  /* Gold call-to-action with a light sweep across it. */
+  .gold-shimmer {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(135deg, hsl(45, 82%, 66%), hsl(43, 74%, 52%) 55%, hsl(38, 70%, 46%));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 8px 22px -8px hsla(43, 70%, 45%, 0.5), inset 0 1px 0 hsla(48, 100%, 88%, 0.55);
+  }
+
+  .gold-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 35%, hsla(48, 100%, 95%, 0.45) 50%, transparent 65%);
+    background-size: 250% 100%;
+    animation: gold-sweep 5s ease-in-out infinite;
+    pointer-events: none;
+    /* Sits above the gold fill but beneath the label. */
+    z-index: -1;
+  }
+
+  @keyframes gold-sweep {
+    0% { background-position: 150% 0; }
+    60%, 100% { background-position: -100% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gold-shimmer::after,
+    .text-gold-gradient,
+    .animate-twinkle,
+    .animate-line-draw {
+      animation: none;
+    }
+  }
 }
 
 @layer utilities {
   .text-gold-gradient {
-    background: linear-gradient(135deg, hsl(43, 76%, 52%), hsl(36, 80%, 60%));
+    background: linear-gradient(110deg, hsl(40, 78%, 50%), hsl(48, 100%, 80%) 45%, hsl(40, 78%, 50%) 60%, hsl(36, 80%, 60%));
+    background-size: 200% 100%;
+    animation: shimmer 6s ease-in-out infinite;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(0.6) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(45deg); }
+  }
+
+  @keyframes line-draw {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .animate-twinkle {
+    animation: twinkle 4s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+
+  .animate-line-draw {
+    stroke-dasharray: 1;
+    animation: line-draw 3s ease-out forwards;
   }
 
   .text-script-ampersand {
