@@ -408,7 +408,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
     }
   };
 
-  const renderPhotoCard = (photo: Photo, index: number) => (
+  const renderPhotoCard = (photo: Photo, index: number, showContributor = true) => (
     <PhotoCard
       key={photo.id}
       src={photo.src}
@@ -418,8 +418,10 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
       canDelete={canDeletePhoto(photo)}
       isDeleting={deletingPhotoId === photo.id}
       onDelete={() => handleDeletePhoto(photo)}
+      showContributor={showContributor}
     />
   );
+  const renderGroupPhotoCard = (photo: Photo, index: number) => renderPhotoCard(photo, index, false);
 
   return (
     <div className="relative isolate min-h-screen">
@@ -490,13 +492,13 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ opacity: { duration: 1.2 }, scale: { duration: 6, ease: "easeOut" } }}
-            className="absolute inset-0 h-full w-full object-cover object-top md:object-[25%_center]"
+            className="absolute inset-y-0 left-0 h-full w-full object-cover object-top md:w-[60%] md:object-center"
           />
         </AnimatePresence>
 
         {/* Photo melts into cream: downward on phones, to the right on wider screens. */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent via-35% to-background to-[72%] md:hidden" />
-        <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent from-25% via-background/80 via-[52%] to-background to-[70%] md:block" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent from-[48%] via-background/60 via-[54%] to-background to-[60%] md:block" />
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-background/70 to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_30%,hsla(24,80%,88%,0.55),transparent_60%)]" />
 
@@ -507,7 +509,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full text-center md:ml-auto md:w-[46%] md:text-left"
+            className="w-full text-center md:ml-auto md:w-[42%] md:text-left"
           >
             <div className="flex items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.3em] text-foreground/60 md:justify-start sm:text-xs">
               <span className="h-px w-8 bg-primary/60" />
@@ -618,26 +620,26 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
         )}
 
         {activeSection === "All" ? (
-          <div className="space-y-8">
+          <div className="grid items-start gap-4 md:grid-cols-2 md:gap-5">
             {contributorGroups.map((group, groupIndex) => (
               <motion.section
                 key={group.contributor}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: groupIndex * 0.05 }}
-                className="glass-card rounded-[1.25rem] p-3.5 sm:rounded-[1.5rem] sm:p-4 md:p-5"
+                className="glass-card min-w-0 rounded-[1.25rem] p-3.5 sm:rounded-[1.5rem] sm:p-4"
               >
-                <div className="mb-3 flex items-center gap-2 sm:mb-4 sm:gap-3">
-                  <h3 className="font-display text-lg font-semibold text-foreground sm:text-xl">
+                <div className="mb-3 flex items-center gap-2 sm:gap-3">
+                  <h3 className="truncate font-display text-lg font-semibold text-foreground sm:text-xl">
                     {group.contributor}
                   </h3>
                   <div className="h-px flex-1 bg-gradient-to-r from-primary/50 via-primary/15 to-transparent" />
-                  <p className="text-[11px] text-muted-foreground sm:text-xs">
+                  <p className="shrink-0 text-[11px] text-muted-foreground sm:text-xs">
                     {group.photos.length} upload{group.photos.length > 1 ? "s" : ""}
                   </p>
                 </div>
 
-                <PhotoGrid photos={group.photos} renderPhoto={renderPhotoCard} />
+                <PhotoGrid photos={group.photos} renderPhoto={renderGroupPhotoCard} fixedColumns={3} />
               </motion.section>
             ))}
           </div>
@@ -650,7 +652,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <PhotoGrid photos={filtered} renderPhoto={renderPhotoCard} />
+              <PhotoGrid photos={filtered} renderPhoto={(photo, index) => renderPhotoCard(photo, index)} />
             </motion.div>
           </AnimatePresence>
         )}

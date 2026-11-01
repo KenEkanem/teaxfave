@@ -10,10 +10,13 @@ export const PHOTO_GRID_CLASSES =
 interface PhotoGridProps<T extends { id: string }> {
   photos: T[];
   renderPhoto: (photo: T, index: number) => ReactNode;
+  /** Use a fixed number of columns instead of the responsive count, e.g. for half-width cards. */
+  fixedColumns?: number;
 }
 
-const PhotoGrid = <T extends { id: string }>({ photos, renderPhoto }: PhotoGridProps<T>) => {
-  const columns = useGridColumns();
+const PhotoGrid = <T extends { id: string }>({ photos, renderPhoto, fixedColumns }: PhotoGridProps<T>) => {
+  const responsiveColumns = useGridColumns();
+  const columns = fixedColumns ?? responsiveColumns;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const hiddenCount = photos.length - columns;
@@ -21,7 +24,10 @@ const PhotoGrid = <T extends { id: string }>({ photos, renderPhoto }: PhotoGridP
 
   return (
     <div>
-      <div className={PHOTO_GRID_CLASSES}>
+      <div
+        className={fixedColumns ? "grid gap-2 sm:gap-2.5" : PHOTO_GRID_CLASSES}
+        style={fixedColumns ? { gridTemplateColumns: `repeat(${fixedColumns}, minmax(0, 1fr))` } : undefined}
+      >
         {visiblePhotos.map((photo, index) => renderPhoto(photo, index))}
       </div>
 

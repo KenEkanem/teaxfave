@@ -20,6 +20,8 @@ interface PhotoCardProps {
   canDelete?: boolean;
   isDeleting?: boolean;
   onDelete?: () => void;
+  /** Hide the contributor tag when the card already sits under the contributor's name. */
+  showContributor?: boolean;
 }
 
 const PhotoCard = ({
@@ -30,6 +32,7 @@ const PhotoCard = ({
   canDelete = false,
   isDeleting = false,
   onDelete,
+  showContributor = true,
 }: PhotoCardProps) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -135,9 +138,11 @@ const PhotoCard = ({
             </div>
             <div className="flex items-center justify-between gap-1.5 px-2 py-1.5">
               <span className="truncate text-[9px] font-body capitalize text-muted-foreground sm:text-[10px]">{section}</span>
-              <span className="hidden max-w-[55%] truncate rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-body font-medium text-primary sm:inline">
-                {contributor}
-              </span>
+              {showContributor && (
+                <span className="hidden max-w-[55%] truncate rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-body font-medium text-primary sm:inline">
+                  {contributor}
+                </span>
+              )}
             </div>
           </div>
         </motion.div>
