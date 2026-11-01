@@ -1,4 +1,5 @@
 const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+const IMAGE_CACHE_URL = import.meta.env.VITE_IMAGE_CACHE_URL?.replace(/\/+$/, "");
 
 export interface Guest {
   name: string;
@@ -142,11 +143,36 @@ export async function listGalleryPhotos() {
     return null;
   }
 
+  if (IMAGE_CACHE_URL) {
+    try {
+      const response = await fetch(`${IMAGE_CACHE_URL}/photos`);
+      const body = (await response.json()) as AppsScriptResponse<{ photos: UploadedPhoto[] }>;
+
+      if (response.ok && body.ok) {
+        return body.data?.photos ?? [];
+      }
+    } catch {
+      // Fall through to Apps Script if the cache worker is unavailable.
+    }
+  }
+
   const response = await postToAppsScript<{ photos: UploadedPhoto[] }>({
     action: "listPhotos",
   });
 
   return response.data?.photos ?? [];
+}
+
+export async function refreshGalleryCache() {
+  if (!IMAGE_CACHE_URL) {
+    return;
+  }
+
+  try {
+    await fetch(`${IMAGE_CACHE_URL}/photos/refresh`, { method: "POST" });
+  } catch {
+    // Other guests will still see the change once the cached list goes stale.
+  }
 }
 
 async function postToAppsScript<T = unknown>(payload: Record<string, unknown>) {

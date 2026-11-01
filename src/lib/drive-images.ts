@@ -20,5 +20,11 @@ export function getDriveThumbnailUrl(src: string, width: number) {
     return src;
   }
 
+  const cacheUrl = import.meta.env.VITE_IMAGE_CACHE_URL?.replace(/\/+$/, "");
+
+  if (cacheUrl) {
+    return `${cacheUrl}/thumb/${encodeURIComponent(fileId)}?w=${width}`;
+  }
+
   return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w${width}`;
 }

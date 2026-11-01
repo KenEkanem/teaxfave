@@ -1,0 +1,17 @@
+name = "fave-tea-cache"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Comma-separated list of sites allowed to call /photos. Replace with your Render URL.
+ALLOWED_ORIGINS = "https://favextea.onrender.com"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "55ec9e1a74104d50aaa5855367e2981c"
+
+# Refresh the photo list from Apps Script every 5 minutes.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# APPS_SCRIPT_URL is a secret: npx wrangler secret put APPS_SCRIPT_URL

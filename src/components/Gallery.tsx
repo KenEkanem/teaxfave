@@ -18,6 +18,7 @@ import {
   deleteGuestPhoto,
   hasAppsScriptBackend,
   listGalleryPhotos,
+  refreshGalleryCache,
   uploadGuestPhotos,
   type Guest,
 } from "@/lib/apps-script";
@@ -293,6 +294,8 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
 
       if (!uploadedPhotos || uploadedPhotos.length === 0) {
         uploadedUrlsRef.current.push(...nextPhotos.map((photo) => photo.src));
+      } else {
+        void refreshGalleryCache();
       }
 
       setPhotos((current) => [...nextPhotos, ...current]);
@@ -344,6 +347,7 @@ const Gallery = ({ user, onLogout }: GalleryProps) => {
           guest: user,
           photoId: photo.id,
         });
+        void refreshGalleryCache();
       }
 
       if (photo.src.startsWith("blob:")) {
